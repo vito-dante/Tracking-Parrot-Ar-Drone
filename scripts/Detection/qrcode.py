@@ -19,7 +19,8 @@ class qrCode(FigureStatus):
         self.scanner.scan(pil)
         for symbol in pil:
             if symbol.data==self.myName:
-                #TODO remove values ramdon
+                #TODO method ubication x,y,p
+
                 self.actualizarSituacion(50, 200, 5)
                 return image
         self.actualizarSituacion(-1,-1,-1)

@@ -214,59 +214,39 @@ class SeguirObjeto(QtGui.QMainWindow):
     def moverDrone(self):
         # verifica si el objeto responsable por el control del drone ya fue inicializado
         if controller is not None:
-            # TODO: implement method detection
-            # if self.secondaryTarget.estado == ObjectStatus.appeared \
-            #         and self.objectTarget.estado == ObjectStatus.samePlace:
-            #         self.flip_animation("/ardrone/setflightanimation", FlightAnim)
-            if self.secondaryTarget.estado != self.ObjectStatus.disapared:
-                self.changeCamera("/ardrone/togglecam", Empty)
-                time.sleep(5)
+            if self.secondaryTarget.estado == self.ObjectStatus.appeared:
+                    # self.flip_animation("/ardrone/setflightanimation", FlightAnim)
+                    self.changeCamera("/ardrone/togglecam", Empty)
 
-            # si la Ball fue identificada como desaparecida por una
-            #  cierta cantidad de veces(TIME_Desaparecio)
-            # pede para o controlador do drone enviar um comando de pouso.
-            # Pide para para el controlador del drone enviar un comando de aterrizar.
             elif self.objectTarget.estado == self.ObjectStatus.disapared:
-                    print("[ATERRIZAR]")
                     # controller.SendLand()
-                    controller.SetCommand(0,0,0,0)
-                    self.objectTarget.contadorDesaparecio = 0
+                    pass
             # si la Ball aparece en la imagen (el drone vio la Ball) manda para despegar
             elif self.objectTarget.estado == self.ObjectStatus.appeared:
-                print("[DESPEGAR]")
-                # controller.SendTakeoff()
-                # controller.SetCommand(0,0,0,0)
-            # si identifico que la Ball esta mandando volar para la izquierda,
-            #  ajusta los parametros que seran enviados al drone para volar
-            # para la izquierda (detalles en drone_controller.py)
+                    # controller.SendTakeoff()
+                    pass
+
             elif self.objectTarget.estado == self.ObjectStatus.movedLeft:
-                print("[PARA LA IZQUIERDA]")
-                # controller.SetCommand(-1*PORCENTAJE_VELOCIDAD, 0,0,0)
-                controller.SetCommand(0,0,-1*PORCENTAJE_VELOCIDAD,0)
+                    # controller.SetCommand(-1*PORCENTAJE_VELOCIDAD, 0,0,0)
+                    controller.SetCommand(0,0,-1*PORCENTAJE_VELOCIDAD,0)
 
             # similar a la funcion de arriba, con la diferencia que va para la derecha
             elif self.objectTarget.estado == self.ObjectStatus.movedRight:
-                print("[PARA LA DERECHA]")
-                # controller.SetCommand(PORCENTAJE_VELOCIDAD, 0,0,0)
-                controller.SetCommand(0,0,PORCENTAJE_VELOCIDAD,0)
+                    # controller.SetCommand(PORCENTAJE_VELOCIDAD, 0,0,0)
+                    controller.SetCommand(0,0,PORCENTAJE_VELOCIDAD,0)
 
 
             # Movimiento en el eje Z
             elif self.objectTarget.estado == self.ObjectStatus.movedUp:
-                print("IR ARRRIBA")
-                # controller.SetCommand(0,0,0,0)
-                controller.SetCommand(0,0,0,PORCENTAJE_VELOCIDAD)
+                    # controller.SetCommand(0,0,0,PORCENTAJE_VELOCIDAD)
+                    pass
 
             elif self.objectTarget.estado == self.ObjectStatus.movedDown:
-                print("IR ABAJO")
-                # controller.SetCommand(0,0,0,0)
-                controller.SetCommand(0,0,0,-1*PORCENTAJE_VELOCIDAD)
-
-
+                    # controller.SetCommand(0,0,0,-1*PORCENTAJE_VELOCIDAD)
+                    pass
             # Si la Ball estuviera en el centro de la imagen pasa parametros
             # que indican al drone de debe estar parado (cero todas las velocidades)
             elif self.objectTarget.estado == ObjectStatus.samePlace:
-                print("flotando")
                 controller.SetCommand(0,0,0,0)
 
     # adiciona control por teclado en la ventana

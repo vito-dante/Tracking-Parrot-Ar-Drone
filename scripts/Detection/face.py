@@ -28,8 +28,6 @@ class Face(FigureStatus):
             faceDraw = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2RGB)
             return faceDraw
         else:
-            # usa -1 para indicar que no encontro ninguna esfera en este fotograma
             self.actualizarSituacion(-1, -1, -1)
             myimage =cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2RGB)
             return myimage
-        # cv2.imshow('Deteccion del objeto', self.cv_image)
