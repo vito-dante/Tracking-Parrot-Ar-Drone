@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>seguir_objeto</name>
+  <version>1.0.0</version>
+  <description>Realiza tracking de un objeto</description>
+
+  <maintainer email="vitoallstarz@gmail.com">Vito Marcilio Marca Vilte</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>ardrone_autonomy</build_depend>
+  <run_depend>ardrone_autonomy</run_depend>
+
+</package>

@@ -1,0 +1,16 @@
+<launch>
+	<!-- Launches the AR.Drone driver -->
+	<node name="ardrone_driver" pkg="ardrone_autonomy" type="ardrone_driver" output="screen" clear_params="true">
+	    <param name="outdoor" value="1" /> <!-- Si nosotros estamos volando en outdoors, selecionaras default settings -->
+	    <param name="flight_without_shell" value="1" /> <!-- Cambios internos del controller gains si nosotros estamos volando sin the propeller guard -->
+	    
+	    <param name="altitude_max" value="1500" /> <!-- En milimitros = 1.5 metros  -->
+        <param name="altitude_min" value="50" /> <!-- En milimitros = 5cm  -->
+        <param name="euler_angle_max" value="0.25" /> <!-- ángulo máximo permisible cuerpo en radianes = 15 degrees -->
+        <param name="control_vz_max" value="800" /> <!-- la velocidad máxima en z expresado en mm/sec = 0.8m/sec -->
+	    <param name="control_yaw" value="2.1" /> <!-- tasa de rotación máxima en radians/sec = 120 degrees per second (1/3 rev/sec) -->
+	</node>
+	
+	<!-- Launches the keyboard controller -->
+	<node name="tracking" pkg="seguir_objeto" type="tracking.py" required="true"/>
+</launch>
