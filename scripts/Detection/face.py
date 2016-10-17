@@ -24,7 +24,7 @@ class Face(FigureStatus):
         if len(self.faces):
             for (x, y, w, h) in self.faces:
                 cv2.rectangle(self.cv_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            self.actualizarSituacion(x, y, 5)
+            self.actualizarSituacion(x, y, w)
             faceDraw = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2RGB)
             return faceDraw
         else:

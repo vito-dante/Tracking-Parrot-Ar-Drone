@@ -26,6 +26,7 @@ from Drone.drone_controller import DroneController
 from Detection.ball import Ball
 from Detection.face import Face
 from Detection.qrcode import qrCode
+from Detection.body import Body
 
 
 # settings
@@ -50,7 +51,8 @@ class SeguirObjeto(QtGui.QMainWindow):
     # ObjectTaarget: sera el objeto principal para el seguimiento
     # secondaryTarget: sera utilizado para que drone
     # reaccione con un movimiento(FLIP)
-    objectTarget = Face()
+    # objectTarget = Face()
+    objectTarget = Body()
     # secondaryTarget = Ball()
     secondaryTarget = qrCode()
 
