@@ -200,8 +200,7 @@ class SeguirObjeto(QtGui.QMainWindow):
             navdata.state] if navdata.state in self.StatusMessages else self.UnknownMessage
         # Estado del objeto(Ball) a ser acrecentado en el mensaje
         # que aparece abajo en la imagen capturada
-        # msgTarget = self.MessageSituacion[self.objectTarget.estado]
-        msgTarget = self.MessageSituacion[self.secondaryTarget.estado]
+        msgTarget = self.MessageSituacion[self.objectTarget.estado]
 
         # Mas alla del estado del drone y el estado del objeto(Ball),
         # anade informacion sobre la carga de la bateria del drone
@@ -215,26 +214,25 @@ class SeguirObjeto(QtGui.QMainWindow):
         # verifica si el objeto responsable por el control del drone ya fue inicializado
         if controller is not None:
             if self.secondaryTarget.estado == self.ObjectStatus.appeared:
-                    # self.flip_animation("/ardrone/setflightanimation", FlightAnim)
-                    self.changeCamera("/ardrone/togglecam", Empty)
+                    self.flip_animation("/ardrone/setflightanimation", FlightAnim)
+                    # self.changeCamera("/ardrone/togglecam", Empty)
 
             elif self.objectTarget.estado == self.ObjectStatus.disapared:
                     # controller.SendLand()
                     pass
-            # si la Ball aparece en la imagen (el drone vio la Ball) manda para despegar
+
             elif self.objectTarget.estado == self.ObjectStatus.appeared:
                     # controller.SendTakeoff()
                     pass
 
             elif self.objectTarget.estado == self.ObjectStatus.movedLeft:
-                    # controller.SetCommand(-1*PORCENTAJE_VELOCIDAD, 0,0,0)
-                    controller.SetCommand(0,0,-1*PORCENTAJE_VELOCIDAD,0)
+                    controller.SetCommand(-1*PORCENTAJE_VELOCIDAD, 0,0,0)
+                    # controller.SetCommand(0,0,-1*PORCENTAJE_VELOCIDAD,0)
 
             # similar a la funcion de arriba, con la diferencia que va para la derecha
             elif self.objectTarget.estado == self.ObjectStatus.movedRight:
-                    # controller.SetCommand(PORCENTAJE_VELOCIDAD, 0,0,0)
-                    controller.SetCommand(0,0,PORCENTAJE_VELOCIDAD,0)
-
+                    controller.SetCommand(PORCENTAJE_VELOCIDAD, 0,0,0)
+                    # controller.SetCommand(0,0,PORCENTAJE_VELOCIDAD,0)
 
             # Movimiento en el eje Z
             elif self.objectTarget.estado == self.ObjectStatus.movedUp:

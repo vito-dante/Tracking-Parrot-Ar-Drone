@@ -19,9 +19,13 @@ class qrCode(FigureStatus):
         self.scanner.scan(pil)
         for symbol in pil:
             if symbol.data==self.myName:
-                #TODO method ubication x,y,p
-
-                self.actualizarSituacion(50, 200, 5)
+                points = symbol.location
+                #Draw square detection RED
+                for i in xrange(3):
+                    cv2.line(image, points[i], points[i+1], (255, 0, 0), 5)
+                cv2.line(image, points[3], points[0], (255, 0, 0), 5)
+                #TODO FIND location center(x,y) and size
+                self.actualizarSituacion(1, 1, 1)
                 return image
         self.actualizarSituacion(-1,-1,-1)
         return image
