@@ -5,3 +5,8 @@ tracking with parrot ar drone 2.0
 - ROS(indigo)
 - opencv(2.4)
 - python(2.7)
+- imutils
+- zbar 
+- PIL
+- numpy
+
