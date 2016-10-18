@@ -47,7 +47,7 @@ class FigureStatus(object):
 
         # the size should be 20 porcent from before size
         # for to know if the object is in the same place
-        porc = self.tamano_antes*0.2
+        porc = self.tamano_antes*0.05
         ptamano_inf = self.tamano_antes - porc
         ptamano_sup = self.tamano_antes + porc
 
@@ -74,6 +74,9 @@ class FigureStatus(object):
             # los margenes de la izquierda, derecha, arriba y abajo seran utilizado para mover el drone en direccion que corresponda hasta que la esfera vuelva a quedar en el centro de la imagen
 
             # una imagen es invertida por eso la derecha gira a la izquierda
+            front = self.tamano_antes + (self.tamano_antes*0.1)
+            behind = self.tamano_antes - (self.tamano_antes*0.1)
+
             if pxc > MARGEN_DER:
                 self.estado = ObjectStatus.movedLeft
             elif pxc < MARGEN_IZQ:
@@ -82,10 +85,10 @@ class FigureStatus(object):
                 self.estado = ObjectStatus.movedDown
             elif pyc < MARGEN_ABAJO:
                 self.estado = ObjectStatus.movedUp
-            # elif ptamano > self.tamano_antes:
-            #     self.estado =  ObjectStatus.movedFront
-            # elif ptamano < self.tamano_antes:
-            #     self.estado =  ObjectStatus.movedBack
+            elif ptamano > front:
+                self.estado =  ObjectStatus.movedFront
+            elif ptamano < behind:
+                self.estado =  ObjectStatus.movedBack
 
         # actualiza las variables del objeto con los valores de dos parametros
         self.tamano_antes = self.tamano

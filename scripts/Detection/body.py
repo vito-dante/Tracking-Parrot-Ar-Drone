@@ -19,14 +19,20 @@ class Body(FigureStatus):
     def findObject(self, image):
         self.ToOpenCV(image)  # Covierte de ROS para OpenCV
         image = self.cv_image
+        image = imutils.resize(image, width=min(360, image.shape[1]))
         (rects, weights) = hog.detectMultiScale(image, winStride=(4, 4),
-                                            padding=(8, 8), scale=1.05)
+                                                padding=(8, 8), scale=1.05)
         rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
         pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
-        # draw the final bounding boxes
-        for (xA, yA, xB, yB) in pick:
-            #TODO DE ESTOS PUNTOS (xA, yA), (xB, yB) | SACAR ESTOS xC, yC, xD, yD
-            #TODO GET THE CENTER OBJECT (XCENTER,YCENTER)
-            #TODO SIZE RECTANGLE OBJECTS
+        if len(pick) == 1:
+            (xA, yA, xB, yB) = pick[0]
+            # for (xA, yA, xB, yB) in pick:
+                # draw the final bounding boxes
             cv2.rectangle(image, (xA, yA), (xB, yB), (0, 255, 0), 2)
+            x = ((xB - xA) /2.0) + xA
+            y = ((yB - yA) / 2.0) + yA
+            size = xB - xA
+            self.actualizarSituacion(x,y,size)
+        else:
+            self.actualizarSituacion(-1, -1, -1)
         return image
