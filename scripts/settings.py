@@ -1,9 +1,9 @@
-# =========================== COMUNICACION CON EL DRONE =================
+# COMMUNICATION WITH THE DRONE
+# Time in milliseconds for connection verification
+CONNECTION_CHECK_PERIOD = 250
+# Time in milliseconds that must be updated graphical interface
+GUI_UPDATE_PERIOD = 33
 
-CONNECTION_CHECK_PERIOD = 250  # Tiempo en milisegundos para una verificacion de conexion
-GUI_UPDATE_PERIOD = 33  # Tiempo en milisegundos en que la interfaz grafica que debe ser actualizada
-
-PORCENTAJE_VELOCIDAD = 0.2 # Porcentaje en relacion a la velocidad total que debe ser usada en el movimiento del drone (el valor va de 0 a 1)
-
-
-# =============================== END COMUNICACION ==============================
+# Percentage in relation to the total rate to be used
+# in the movement of the drone (the value ranges from 0 to 1)
+PORCENTAJE_VELOCIDAD = 0.2

@@ -2,7 +2,6 @@
 import cv2
 from .figure import FigureStatus
 
-# importa la ruta del haarcascade_frontalface_alt_tree
 import os
 cascPath = os.path.dirname(os.path.realpath(__file__))+'/haarcascade_frontalface_alt_tree.xml'
 faceCascade = cv2.CascadeClassifier(cascPath)
@@ -12,7 +11,7 @@ class Face(FigureStatus):
         super(Face, self).__init__()
 
     def findObject(self, image):
-        self.ToOpenCV(image)  # Covierte de ROS para OpenCV
+        self.ToOpenCV(image)
         hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2GRAY)
         faces = faceCascade.detectMultiScale(
             hsv,

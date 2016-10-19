@@ -3,10 +3,7 @@
 # Biblioteca ROS para python
 from threading import Lock
 
-# connector for ROS
 import rospy
-
-import time
 
 import sys
 
@@ -19,7 +16,6 @@ from Detection.objectStatus import ObjectStatus
 # status of the drone
 from Drone.drone_status import DroneStatus
 
-# importa el controlador del drone
 from Drone.drone_controller import DroneController
 
 #Objects for detection
@@ -34,23 +30,24 @@ from settings import CONNECTION_CHECK_PERIOD
 from settings import GUI_UPDATE_PERIOD
 from settings import PORCENTAJE_VELOCIDAD
 
+# messages coming from ROS
+#To receive video frames
+from sensor_msgs.msg import Image
+# Message parameter for changing camera
+from std_srvs.srv import Empty
 
-# mensajes que vienen de ROS
-from sensor_msgs.msg import Image  # Para recibir los fotogramas del video
-
-from std_srvs.srv import Empty #Mensaje de parametro para el cambio de camara
-
-# mensaje de ardrone_autonomy
-from ardrone_autonomy.msg import Navdata # Para recibir informacion sobre el estado del drone
-
+# message ardrone_autonomy
+#To receive information on the status of the drone
+from ardrone_autonomy.msg import Navdata
+#animation for the drone
 from ardrone_autonomy.srv import FlightAnim,LedAnim
 
 
 class SeguirObjeto(QtGui.QMainWindow):
-    # definicion de los tipos de objectos
-    # ObjectTaarget: sera el objeto principal para el seguimiento
-    # secondaryTarget: sera utilizado para que drone
-    # reaccione con un movimiento(FLIP)
+
+    # ObjectTarget: It is the main object for tracking
+    # secondaryTarget: It is used to give an animation to drone like flip
+
     # objectTarget = Face()
     objectTarget = Body()
     # secondaryTarget = Ball()
@@ -58,6 +55,7 @@ class SeguirObjeto(QtGui.QMainWindow):
 
     DroneStatus = DroneStatus()
     ObjectStatus = ObjectStatus()
+
     # status of the drone for the windows
     StatusMessages = {
         DroneStatus.emergency: 'Emergencia',
@@ -91,69 +89,60 @@ class SeguirObjeto(QtGui.QMainWindow):
 
         super(SeguirObjeto, self).__init__()
 
-        # titulo de la ventana
+        # title window
         self.setWindowTitle('Vision del drone')
-        # imageBox donde sera dibujada la ventana
-        self.imageBox = QtGui.QLabel(self) #aqui entran los FPS
+        # imageBox, where the window will be drawn
+        #here come the FPS
+        self.imageBox = QtGui.QLabel(self)
         self.setCentralWidget(self.imageBox)
 
-        # se inscribe en el topico  de ardrone_autonomy que publica
-        # informaciones sobre la situacion del drone
+        # to receive data from drone
         self.subNavdata = rospy.Subscriber(
             '/ardrone/navdata', Navdata, self.ReceiveNavdata)
 
-        # Se inscribe en el topico de ardrone_autonomy que publica imagenes
-        # capturadas por la camara
+        # to receive images from drone
         self.subVideo = rospy.Subscriber(
             '/ardrone/image_raw', Image, self.ReceiveImage)
 
-        # variable que ira a guardar los fotogramas de la imagen caputrada por el drone
+        # self.image: save the images captured by the drone
         self.image = None
-        self.imageLock = Lock()   # guarda una cerradura para la parte del codigo
-        #  que muestra la imagen en la ventana
+        # TODO TEST SYNC IMAGE LOCK
+        # a lock is required so that there is a synchronization
+        # between the reception of the current image and the previous
+        self.imageLock = Lock()
 
-        # mensaje de estado del drone para ser prensetada en la
-        # interfaz grafica ( se modifica durante la ejecucion)
+        # drone status message to be shown in the GUI
         self.statusMessage = ''
 
-        # usado para saber si recibimos datos del drone desde la ultima vez que
-        # el temporizador desaperecio
+        #TODO METHOD TEST
+        # used to know whether the drone receive data from the last time the timer disappeared
         self.communicationSinceTimer = False
         self.connected = False
 
-        # Temporizador para verificar de tiempo en tiempo si
-        # el drone todavia esta conectado via WI-FI
-        self.connectionTimer = QtCore.QTimer(self)    # Crea un temporizador
-        # Indica que la funcion que debe ser llamada cuando le de el tiempo
+        # Timer to check from time to time if the drone still is connected via WI-FI
+        # Create a timer
+        self.connectionTimer = QtCore.QTimer(self)
         self.connectionTimer.timeout.connect(self.ConnectionCallback)
-        # Indica la frequencia cuando la funcion debe ser llamada
+        # It indicates the frequency
         self.connectionTimer.start(CONNECTION_CHECK_PERIOD)
 
-        # temporizador para redisenar la ventana de interfaz en tiempo en tiempo
+        # timer to redraw the interface window in time to time
         self.redrawTimer = QtCore.QTimer(self)
         self.redrawTimer.timeout.connect(self.RedrawCallback)
         self.redrawTimer.start(GUI_UPDATE_PERIOD)
 
 
-
-    # Funcion que sera llamada de tiempo en tiempo y que actualiza
-    # una variable connect para indicar
-    # si hubiera comunicacion con el drone, el portatil y el drone estan conectados.
-    # la variable communicationSinceTimer es actualizada en otra parte del codigo
     def ConnectionCallback(self):
         self.connected = self.communicationSinceTimer
         self.communicationSinceTimer = False
 
-    # Funcion que sera llamada de tiempo en tiempo
-    # para redisenar la ventana con una imagen que ve el drone
     def RedrawCallback(self):
         if self.image is not None:
-            # Por problemas de sincronizacion, el sistema solicita un bloqueo aqui
-            # que la imagen sea actualizada en la ventana
+            # By synch problems, the system requests a lock here
+            # the image is updated in the window
             self.imageLock.acquire()
             try:
-                # pide para el objeto se ha detectado, pasa el
-                # fotograma recien capturado como parametro
+                # detection object
                 frame = self.objectTarget.findObject(self.image)
                 #frame of type RGB
                 frame = self.secondaryTarget.findObject(frame)
@@ -167,53 +156,48 @@ class SeguirObjeto(QtGui.QMainWindow):
             finally:
                 self.imageLock.release()
 
-            # Muestra una imagen en la ventana de la interfaz grafica
+            # Displays an image in the window of the GUI
             self.resize(image.width(), image.height())
             self.imageBox.setPixmap(pix)
-            # llama una funcion que va mandar al drone moverse,
-            # si el objeto (Ball) lo indica
+            # Motion for the drone
             self.moverDrone()
 
-        # actualiza un mensaje con la situacion del drone
+        # updates a message with the current situation of the drone
         self.statusBar().showMessage(
             self.statusMessage if self.connected else self.DisconnectedMessage)
 
-    # Funcion que es llamada cuando llega una nueva imagen
+    # Function that is called when a new image arrives
     def ReceiveImage(self, data):
-        # Indica que hubo comunicacion (ya que el fotograma de la imagen fue recibido )
+        # Indicates that there was communication (the picture frame was received)
         self.communicationSinceTimer = True
 
-        # Bloqua para evitar problemas con la
-        # sincronizacion(ocurre por que la imagen es grande
-        # y no da para parar y copiarla en medio del proceso)
+        # Block to avoid problems with synchronization (occurs because
+        # the image is large
+        # and gives to stop and copy it through the process
         self.imageLock.acquire()
         try:
-            self.image = data  # Guarda la imagen recibida a traves del parametro data
+            #save image
+            self.image = data
         finally:
             self.imageLock.release()
 
     def ReceiveNavdata(self, navdata):
-        # Indica que hubo comunicacion (ya que llegaron datos sobre el drone)
-        # por el puerto 5556
+        # Indicates that there was communication (since data on the drone arrived)
+        #  through the port 5556
         self.communicationSinceTimer = True
 
-        # actualiza la situacion del drone que aparece en la interfaz con el estado del drone
+        # updates the status of the drone in the window
         msg = self.StatusMessages[
             navdata.state] if navdata.state in self.StatusMessages else self.UnknownMessage
-        # Estado del objeto(Ball) a ser acrecentado en el mensaje
-        # que aparece abajo en la imagen capturada
         msgTarget = self.MessageSituacion[self.objectTarget.estado]
 
-        # Mas alla del estado del drone y el estado del objeto(Ball),
-        # anade informacion sobre la carga de la bateria del drone
+        # the object type and battery
         self.statusMessage = '{} | Target: {} (Battery: {}%)'.format(
-            msg, msgTarget, int(navdata.batteryPercent))  # mostrar la carga de la bateria
+            msg, msgTarget, int(navdata.batteryPercent))
 
-    # esta funcion es asociada siempre que un nuevo fotograma
-    #  en la imagen es capturado y depende de la situacion del drone
-    # y el objeto (Ball) decide (despegar, aterrizar, mover a la izquierda, ....)
+
     def moverDrone(self):
-        # verifica si el objeto responsable por el control del drone ya fue inicializado
+        # verifies if the driver is ready to use drone
         if controller is not None:
             if self.secondaryTarget.estado == self.ObjectStatus.appeared:
                     self.flip_animation("/ardrone/setflightanimation", FlightAnim)
@@ -244,35 +228,26 @@ class SeguirObjeto(QtGui.QMainWindow):
             elif self.objectTarget.estado == self.ObjectStatus.movedDown:
                     # controller.SetCommand(0,0,0,-1*PORCENTAJE_VELOCIDAD)
                     pass
-            # Si la Ball estuviera en el centro de la imagen pasa parametros
-            # que indican al drone de debe estar parado (cero todas las velocidades)
+
             elif self.objectTarget.estado == ObjectStatus.samePlace:
                 controller.SetCommand(0,0,0,0)
 
-    # adiciona control por teclado en la ventana
-    # principal(aquella donde aparece los mensajes de situacion del drone)
-    #  para poder aterrizar usando la barra espaciadora y depegar la tecla D
-    # tambien es posible usar la tecla R para reiniciar
-    # el drone (cuando los LEDs del drone esten en rojo, por ejemplo
-    # es preciso reinicializar senal cuando el drone cae desprevenidamente)
+    # keyboard, keys to move the drone
     def keyPressEvent(self, event):
 
-        # Recibe una tecla que fue tecleada
         key = event.key()
-        # Si el controlador del drone estuviese ok y
-        # el teclado no esta en modo de repeticion automotica
         if controller is not None and not event.isAutoRepeat():
-            if key == QtCore.Qt.Key.Key_Space:   # Espacio para aterrizar
+            if key == QtCore.Qt.Key.Key_Space:   # space for  land
                 controller.SendLand()
-            elif key == QtCore.Qt.Key.Key_D: # Tecla "D" para despegar
+            elif key == QtCore.Qt.Key.Key_D: # key "D" para takeoff
                 controller.SendTakeoff()
-            elif key == QtCore.Qt.Key.Key_R: # Tecla "R" para resetear el estado de emergencia
+            elif key == QtCore.Qt.Key.Key_R: # key "R" change emergency mode
                 controller.SendEmergency()
-            elif key == QtCore.Qt.Key.Key_P: # Tecla "P" para cambiar la camara
+            elif key == QtCore.Qt.Key.Key_P: # key "P" change camera
                 self.changeCamera("/ardrone/togglecam", Empty)
-            elif key == QtCore.Qt.Key.Key_B: # Tecla "B" para cambiar la camara
+            elif key == QtCore.Qt.Key.Key_B: # key "B" animation led
                 self.ledAnimation("/ardrone/setledanimation", LedAnim)
-            elif key == QtCore.Qt.Key.Key_X: # Tecla "X" para cambiar la camara
+            elif key == QtCore.Qt.Key.Key_X: # key "X" FLIP animation
                 self.flip_animation("/ardrone/setflightanimation", FlightAnim)
 
 
@@ -303,20 +278,20 @@ class SeguirObjeto(QtGui.QMainWindow):
 
 
 if __name__ == '__main__':
-    # Inicia el nodo
+    # Starts the node
     rospy.init_node('tracking')
 
-    # Inicia Qt y el controlador del drone (Realiza instancias)
+    #Qt and the controller starts Drone
     app = QtGui.QApplication(sys.argv)
     controller = DroneController()
     seguidor = SeguirObjeto()
 
-    # Indica que la ventana principal debe ser mostrada
+    # SHOW  GUI WINDOW
     seguidor.show()
 
-    # Inicia una ejecucion de una aplicacion basada en Qt
+    # Initiates an execution of an application based on Qt
     status = app.exec_()
 
-    # llega aqui cuando la ventana principal es cerrada
+    # This happens when the window is closed
     rospy.signal_shutdown('Finish by Vito')
     sys.exit(status)

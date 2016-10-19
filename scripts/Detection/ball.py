@@ -1,41 +1,14 @@
-
-import numpy as np
 import cv2
 from .figure import FigureStatus
 
-# ===================== SETTINGS BALL ==============================
-# Define la funcion que convierte una imagen para el formato de Opencv2,
-# trabaja usando la clase CvBridge del paquete cv_bridge
-# ==================== ESPACIOS DE COLORES =================
-# Los valores de abajo fueron obtenidos utilizando imagenJ (image->adjust->threshold)
-# en una imagen capturada por el drone, guarda un archivo despues
-# "binarizarla" en imageJ
-MIN_H = 22  # Valor minimo de H al ser usado la limitarizacion en HSV
-MAX_H = 71  # maximo de H
-MIN_S = 43  # minimo de S
-MAX_S = 204  # maximo de S
-MIN_V = 97  # minimo de V
-MAX_V = 203  # maximo de V
-# ==================== END ESPACIOS DE COLORES =================
-
-# ==================== OBJETO =================
-MIN_AREA = 100   # area minima para considerar la esfera (en pixeles)
-MAX_AREA = 13000  # are maxima en pixeles
-MIN_CIRCULARIDAD = 0.4  # variable que define que tan circular es el objeto
-# que se va a detectar si pongo un valor muy alto sera precisamente un circulo
-# y no detectara otra cosa que no sea parecida a ella, estoy colocando un
-# valor bajo para que detecte objetos que no son precisamentes circulares o esferico
-# va ser usado para identificar movimientos para el frente y para atras
-# con base en el cambio en porcentaje del tamano de la esfera (en la
-# perspectiva de la camara del drone)
-PORCENTAJE_CAMBIO_AREA = 0.5
-# ==================== END OBJETO =================
-# usado para limpiar blobs/contornos pequenos (nucleo para aplicaciones de
-# convulsion, de dilatacion en este caso )
-kernelSize = 3
-kernel = np.ones((kernelSize, kernelSize), np.uint8)
-# ===================== END SETTINGS BALL ==============================
-
+# Color space
+# The values below were obtained using ImageJ (image-> adjust-> threshold)
+MIN_H = 22
+MAX_H = 71
+MIN_S = 43
+MAX_S = 204
+MIN_V = 97
+MAX_V = 203
 
 class Ball(FigureStatus):
 
@@ -43,26 +16,16 @@ class Ball(FigureStatus):
         super(Ball, self).__init__()
         self.greenLower = (29, 86, 6)
         self.greenUpper = (64, 255, 255)
-        self.mask = None
-        self.frame = None
-        self.copyFrame = None
-    # utilizando la segmentacion basada en binarizacion en el espacio
-    #  de color HSV, segmenta las imagenes con pixeles segun al color
-    # Los umbrales son fijos y definidos por la variable MIN H, MIN S ... en
-    # el principio del codigo
+
     def segmentaObjetosColorRoi(self):
-        self.copyFrame = self.frame
-        blurred = cv2.GaussianBlur(self.copyFrame, (11, 11), 0)
-        hsv = cv2.cvtColor(self.copyFrame, cv2.COLOR_BGR2HSV)
+        cv2.GaussianBlur(self.cv_image, (11, 11), 0)
+        hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
 
         mask = cv2.inRange(hsv, self.greenLower, self.greenUpper)
         mask = cv2.erode(mask, None, iterations=2)
-        self.mask = cv2.dilate(mask, None, iterations=2)
+        cv2.dilate(mask, None, iterations=2)
 
-    # analiza los componentes conexos de la imagen binarizada y filtra solo
-    # los que tengan area mayor o menor que los umbrales declarados a
-    # principios de este codigo y que tambien tenga una circularidad mayor que
-    # un valor predeterminado (tambien definido a principios del codigo)
+    # analyzes the image related components
     def detectaObjetoMasRedondo(self):
 
         cnts = cv2.findContours(self.mask.copy(),
@@ -93,13 +56,10 @@ class Ball(FigureStatus):
         else:
             self.actualizarSituacion(-1, -1, -1)
 
-    # Va a detectar la esfera dentro de la imagen (o su ausencia) y
-    # actualizara la situacion no hace mucho, ademas de llamar a las funciones
-    # que realmente lo hacen
+
     def findObject(self, image):
         # self.ToOpenCV(image)
-        # image type RGB
-        self.frame = image
+        self.cv_image = image
         self.segmentaObjetosColorRoi()
         self.detectaObjetoMasRedondo()
         return self.frame
