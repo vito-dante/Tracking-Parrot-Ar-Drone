@@ -42,6 +42,10 @@ from ardrone_autonomy.msg import Navdata
 #animation for the drone
 from ardrone_autonomy.srv import FlightAnim,LedAnim
 
+# To convert the picture type ROS to OpenCV
+from cv_bridge import CvBridge
+from cv_bridge import CvBridgeError
+bridge = CvBridge()
 
 class SeguirObjeto(QtGui.QMainWindow):
 
@@ -55,6 +59,8 @@ class SeguirObjeto(QtGui.QMainWindow):
 
     DroneStatus = DroneStatus()
     ObjectStatus = ObjectStatus()
+
+    imageOpencv = None
 
     # status of the drone for the windows
     StatusMessages = {
@@ -136,14 +142,23 @@ class SeguirObjeto(QtGui.QMainWindow):
         self.connected = self.communicationSinceTimer
         self.communicationSinceTimer = False
 
+        # ROS IMAGE converted to OpenCV
+    def ToOpenCV(self, ros_image):
+        try:
+            self.imageOpencv = bridge.imgmsg_to_cv2(ros_image, "bgr8")
+        except CvBridgeError, e:
+            print (e)
+            raise Exception("Falla en conversion de imagen para OpenCV")
+
     def RedrawCallback(self):
         if self.image is not None:
-            # By synch problems, the system requests a lock here
+            # By sync problems, the system requests a lock here
             # the image is updated in the window
             self.imageLock.acquire()
             try:
+                self.ToOpenCV(self.image)#Covierte de ROS para OpenCV
                 # detection object
-                frame = self.objectTarget.findObject(self.image)
+                frame = self.objectTarget.findObject(self.imageOpencv)
                 #frame of type RGB
                 frame = self.secondaryTarget.findObject(frame)
 
@@ -288,7 +303,6 @@ if __name__ == '__main__':
 
     # SHOW  GUI WINDOW
     seguidor.show()
-
     # Initiates an execution of an application based on Qt
     status = app.exec_()
 

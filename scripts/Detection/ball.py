@@ -16,10 +16,11 @@ class Ball(FigureStatus):
         super(Ball, self).__init__()
         self.greenLower = (29, 86, 6)
         self.greenUpper = (64, 255, 255)
+        self.frame = None
 
     def segmentaObjetosColorRoi(self):
-        cv2.GaussianBlur(self.cv_image, (11, 11), 0)
-        hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2HSV)
+        cv2.GaussianBlur(self.frame, (11, 11), 0)
+        hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
 
         mask = cv2.inRange(hsv, self.greenLower, self.greenUpper)
         mask = cv2.erode(mask, None, iterations=2)
@@ -59,7 +60,7 @@ class Ball(FigureStatus):
 
     def findObject(self, image):
         # self.ToOpenCV(image)
-        self.cv_image = image
+        self.frame = image
         self.segmentaObjetosColorRoi()
         self.detectaObjetoMasRedondo()
         return self.frame

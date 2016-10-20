@@ -17,8 +17,6 @@ class Body(FigureStatus):
         super(Body, self).__init__()
 
     def findObject(self, image):
-        self.ToOpenCV(image)  # Covierte de ROS para OpenCV
-        image = self.cv_image
         image = imutils.resize(image, width=min(360, image.shape[1]))
         (rects, weights) = hog.detectMultiScale(image, winStride=(4, 4),
                                                 padding=(8, 8), scale=1.05)

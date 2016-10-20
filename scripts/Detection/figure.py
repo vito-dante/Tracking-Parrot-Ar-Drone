@@ -1,10 +1,4 @@
 from .objectStatus import ObjectStatus
-
-# To convert the picture type ROS to OpenCV
-from cv_bridge import CvBridge
-from cv_bridge import CvBridgeError
-bridge = CvBridge()
-
 from settings_objects import MAX_X
 from settings_objects import MAX_Y
 
@@ -33,19 +27,9 @@ class FigureStatus(object):
         self.tamano = -1
         #initial state of the object
         self.estado = ObjectStatus.disapared
-        #Saves an image in a format compatible with OpenCV
-        self.cv_image = None
 
     def findObject(self,image):
         pass
-
-    # ROS IMAGE converted to OpenCV
-    def ToOpenCV(self,ros_image):
-        try:
-            self.cv_image = bridge.imgmsg_to_cv2(ros_image, "bgr8")
-        except CvBridgeError, e:
-            print (e)
-            raise Exception("Falla en conversion de imagen para OpenCV")
 
     def actualizarSituacion(self, pxc, pyc, ptamano):
 

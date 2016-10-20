@@ -11,8 +11,7 @@ class Face(FigureStatus):
         super(Face, self).__init__()
 
     def findObject(self, image):
-        self.ToOpenCV(image)
-        hsv = cv2.cvtColor(self.cv_image, cv2.COLOR_BGR2GRAY)
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         faces = faceCascade.detectMultiScale(
             hsv,
             scaleFactor=1.1,
