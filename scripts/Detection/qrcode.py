@@ -24,8 +24,16 @@ class qrCode(FigureStatus):
                 for i in xrange(3):
                     cv2.line(image, points[i], points[i+1], (255, 0, 0), 5)
                 cv2.line(image, points[3], points[0], (255, 0, 0), 5)
-                #TODO FIND location center(x,y) and size
-                self.actualizarSituacion(1, 1, 1)
+                a = points[2][0]
+                c = points[0][0]
+                d = points[2][1]
+                e = points[0][1]
+                pointLocationX = ((a - c )/2.0) + c
+                pointLocationY = ((d - e)/2.0) + e
+                #TODO SIZE relative change to size fixed
+                size = a - c
+
+                self.actualizarSituacion(pointLocationX, pointLocationY, size)
                 return image
         self.actualizarSituacion(-1,-1,-1)
         return image

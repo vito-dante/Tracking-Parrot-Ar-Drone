@@ -112,7 +112,6 @@ class SeguirObjeto(QtGui.QMainWindow):
 
         # self.image: save the images captured by the drone
         self.image = None
-        # TODO TEST SYNC IMAGE LOCK
         # a lock is required so that there is a synchronization
         # between the reception of the current image and the previous
         self.imageLock = Lock()
@@ -120,7 +119,6 @@ class SeguirObjeto(QtGui.QMainWindow):
         # drone status message to be shown in the GUI
         self.statusMessage = ''
 
-        #TODO METHOD TEST
         # used to know whether the drone receive data from the last time the timer disappeared
         self.communicationSinceTimer = False
         self.connected = False
