@@ -19,6 +19,9 @@ tracking with parrot ar drone 2.0
     rqt
 export containerId=$(docker ps -l -q)`
 
+[More info](http://wiki.ros.org/docker/Tutorials/GUI#The_simple_way)
+
+
 ## License
 
 The MIT License
