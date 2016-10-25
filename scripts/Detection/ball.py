@@ -16,23 +16,23 @@ class Ball(FigureStatus):
         super(Ball, self).__init__()
         self.greenLower = (29, 86, 6)
         self.greenUpper = (64, 255, 255)
+        self.mask = None
         self.frame = None
 
     def segmentaObjetosColorRoi(self):
         cv2.GaussianBlur(self.frame, (11, 11), 0)
         hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
 
-        mask = cv2.inRange(hsv, self.greenLower, self.greenUpper)
-        mask = cv2.erode(mask, None, iterations=2)
-        cv2.dilate(mask, None, iterations=2)
+        self.mask = cv2.inRange(hsv, self.greenLower, self.greenUpper)
+        self.mask = cv2.erode(self.mask, None, iterations=2)
+        cv2.dilate(self.mask, None, iterations=2)
 
     # analyzes the image related components
     def detectaObjetoMasRedondo(self):
 
-        cnts = cv2.findContours(self.mask.copy(),
+        cnts = cv2.findContours(self.mask,
                                 cv2.RETR_EXTERNAL,
                                 cv2.CHAIN_APPROX_SIMPLE)[-2]
-        center = None
         # only proceed if at least one contour was found
         if len(cnts) > 0:
             # find the largest contour in the mask, then use
@@ -59,7 +59,6 @@ class Ball(FigureStatus):
 
 
     def findObject(self, image):
-        # self.ToOpenCV(image)
         self.frame = image
         self.segmentaObjetosColorRoi()
         self.detectaObjetoMasRedondo()

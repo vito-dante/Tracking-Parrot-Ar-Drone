@@ -6,4 +6,4 @@ GUI_UPDATE_PERIOD = 33
 
 # Percentage in relation to the total rate to be used
 # in the movement of the drone (the value ranges from 0 to 1)
-PORCENTAJE_VELOCIDAD = 0.2
+PORCENTAJE_VELOCIDAD = 0.8

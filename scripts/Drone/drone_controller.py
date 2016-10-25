@@ -50,16 +50,23 @@ class DroneController(object):
     def ReceiveNavdata(self, navdata):
         self.status = navdata.state
 
-    # Send a signal to take off
-    def SendTakeoff(self):
-        #(before test if the drone is not in the air)
-        if(self.status == DroneStatus.landed):
-            self.pubTakeoff.publish(Empty())
-
-    # Send a signal to land
     def SendLand(self):
-        if(self.status != DroneStatus.landed):
+        if (self.status == DroneStatus.flying or self.status == DroneStatus.hovering or
+                    self.status == DroneStatus.gotohover):
             self.pubLand.publish(Empty())
+            return True
+        return False
+
+    def SendTakeoff(self):
+        if (self.status == DroneStatus.landed):
+            self.pubTakeoff.publish(Empty())
+            return True
+        return False
+
+    def Takeoff_Land_toggle(self):
+        if not self.SendTakeoff():
+            self.SendLand()
+        return True
 
     # Sends a signal to switch to emergency mode
     def SendEmergency(self):
@@ -67,17 +74,15 @@ class DroneController(object):
 
     # set values
     def SetCommand(self, roll=0, pitch=0, yaw_velocity=0, z_velocity=0):
-        #Movement for the front and back
-        self.command.linear.x = pitch
         #Movement for left and right
         self.command.linear.y = roll
-        #Up and down
-        self.command.linear.z = z_velocity
+        #Movement for the front and back
+        self.command.linear.x = pitch
         #Rotational movement around its own axis
         self.command.angular.z = yaw_velocity
+        #Up and down
+        self.command.linear.z = z_velocity
 
     def SendCommand(self, event):
         if self.status == DroneStatus.flying or self.status == DroneStatus.hovering:
             self.pubCommand.publish(self.command)
-
-

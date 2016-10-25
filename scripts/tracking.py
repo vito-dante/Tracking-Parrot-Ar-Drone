@@ -1,6 +1,5 @@
 #! /usr/bin/python
 
-# Biblioteca ROS para python
 from threading import Lock
 
 import rospy
@@ -52,10 +51,10 @@ class SeguirObjeto(QtGui.QMainWindow):
     # ObjectTarget: It is the main object for tracking
     # secondaryTarget: It is used to give an animation to drone like flip
 
-    # objectTarget = Face()
-    objectTarget = Body()
-    # secondaryTarget = Ball()
-    secondaryTarget = qrCode()
+    objectTarget = Face()
+    # objectTarget = Body()
+    secondaryTarget = Ball()
+    # secondaryTarget = qrCode()
 
     DroneStatus = DroneStatus()
     ObjectStatus = ObjectStatus()
@@ -158,7 +157,7 @@ class SeguirObjeto(QtGui.QMainWindow):
                 # detection object
                 frame = self.objectTarget.findObject(self.imageOpencv)
                 #frame of type RGB
-                frame = self.secondaryTarget.findObject(frame)
+                # frame = self.secondaryTarget.findObject(frame)
 
                 image = QtGui.QImage(frame,
                                      frame.shape[1],
@@ -217,21 +216,23 @@ class SeguirObjeto(QtGui.QMainWindow):
                     # self.changeCamera("/ardrone/togglecam", Empty)
 
             elif self.objectTarget.estado == self.ObjectStatus.disapared:
-                    # controller.SendLand()
+                    # controller.SendTakeoff_SendLand()
                     pass
 
             elif self.objectTarget.estado == self.ObjectStatus.appeared:
-                    # controller.SendTakeoff()
+                    # controller.SendTakeoff_SendLand()
                     pass
 
             elif self.objectTarget.estado == self.ObjectStatus.movedLeft:
-                    controller.SetCommand(-1*PORCENTAJE_VELOCIDAD, 0,0,0)
+                    # controller.SetCommand(-1*PORCENTAJE_VELOCIDAD, 0,0,0)
                     # controller.SetCommand(0,0,-1*PORCENTAJE_VELOCIDAD,0)
+                    pass
 
             # similar a la funcion de arriba, con la diferencia que va para la derecha
             elif self.objectTarget.estado == self.ObjectStatus.movedRight:
-                    controller.SetCommand(PORCENTAJE_VELOCIDAD, 0,0,0)
+                    # controller.SetCommand(PORCENTAJE_VELOCIDAD, 0,0,0)
                     # controller.SetCommand(0,0,PORCENTAJE_VELOCIDAD,0)
+                    pass
 
             # Movimiento en el eje Z
             elif self.objectTarget.estado == self.ObjectStatus.movedUp:
@@ -242,25 +243,51 @@ class SeguirObjeto(QtGui.QMainWindow):
                     # controller.SetCommand(0,0,0,-1*PORCENTAJE_VELOCIDAD)
                     pass
 
-            elif self.objectTarget.estado == ObjectStatus.samePlace:
-                controller.SetCommand(0,0,0,0)
+            # backward
+            elif self.objectTarget.estado == self.ObjectStatus.movedFront:
+                    # controller.SetCommand(0,PORCENTAJE_VELOCIDAD, 0, 0)
+                    pass
 
+            # forward
+            elif self.objectTarget.estado == self.ObjectStatus.movedBack:
+                    # controller.SetCommand(0,-1*PORCENTAJE_VELOCIDAD, 0, 0)
+                    pass
+
+            elif self.objectTarget.estado == ObjectStatus.samePlace:
+                    # controller.SetCommand()
+                    pass
     # keyboard, keys to move the drone
     def keyPressEvent(self, event):
 
         key = event.key()
         if controller is not None and not event.isAutoRepeat():
-            if key == QtCore.Qt.Key.Key_Space:   # space for  land
-                controller.SendLand()
-            elif key == QtCore.Qt.Key.Key_D: # key "D" para takeoff
-                controller.SendTakeoff()
-            elif key == QtCore.Qt.Key.Key_R: # key "R" change emergency mode
+            if key == QtCore.Qt.Key.Key_Space:   # space for  takeoff or land
+                controller.SendTakeoff_SendLand()
+            elif key == QtCore.Qt.Key_W: # key "W" for forward
+                controller.SetCommand(0, PORCENTAJE_VELOCIDAD, 0, 0)
+            elif key == QtCore.Qt.Key_S: # key "S" for backward
+                controller.SetCommand(0, -1*PORCENTAJE_VELOCIDAD, 0, 0)
+            elif key == QtCore.Qt.Key_A: # key "A" for left
+                controller.SetCommand(PORCENTAJE_VELOCIDAD, 0, 0, 0)
+            elif key == QtCore.Qt.Key_D: # key "D" for right
+                controller.SetCommand(-1*PORCENTAJE_VELOCIDAD, 0, 0, 0)
+            elif key == QtCore.Qt.Key_Right: # key "-->" for Right Vertex z
+                controller.SetCommand(0, 0, PORCENTAJE_VELOCIDAD, 0)
+            elif key == QtCore.Qt.Key_Left: # key "<--" for Left Vertex z
+                controller.SetCommand(0, 0, -1*PORCENTAJE_VELOCIDAD, 0)
+            elif key == QtCore.Qt.Key_Up: # key "Up" for up Vertex z
+                controller.SetCommand(0, 0, 0, PORCENTAJE_VELOCIDAD)
+            elif key == QtCore.Qt.Key_Down: # key "Down" for Down Vertex z
+                controller.SetCommand(0, 0, 0, -1*PORCENTAJE_VELOCIDAD)
+            elif key == QtCore.Qt.Key_Q: # key "Q" for to stay
+                controller.SetCommand()
+            elif key == QtCore.Qt.Key_R: # key "R" change emergency mode
                 controller.SendEmergency()
-            elif key == QtCore.Qt.Key.Key_P: # key "P" change camera
+            elif key == QtCore.Qt.Key_P: # key "P" change camera
                 self.changeCamera("/ardrone/togglecam", Empty)
-            elif key == QtCore.Qt.Key.Key_B: # key "B" animation led
+            elif key == QtCore.Qt.Key_B: # key "B" animation led
                 self.ledAnimation("/ardrone/setledanimation", LedAnim)
-            elif key == QtCore.Qt.Key.Key_X: # key "X" FLIP animation
+            elif key == QtCore.Qt.Key_X: # key "X" FLIP animation
                 self.flip_animation("/ardrone/setflightanimation", FlightAnim)
 
 

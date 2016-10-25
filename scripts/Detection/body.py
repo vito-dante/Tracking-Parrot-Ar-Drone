@@ -8,17 +8,15 @@ import cv2
 hog = cv2.HOGDescriptor()
 hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
-cap = cv2.VideoCapture(0)
-
-
 class Body(FigureStatus):
     # detect people in the image
     def __init__(self):
         super(Body, self).__init__()
 
     def findObject(self, image):
-        image = imutils.resize(image, width=min(360, image.shape[1]))
-        (rects, weights) = hog.detectMultiScale(image, winStride=(4, 4),
+        image_copy = image
+        # image = imutils.resize(image, width=min(360, image.shape[1]))
+        (rects, weights) = hog.detectMultiScale(image_copy, winStride=(4, 4),
                                                 padding=(8, 8), scale=1.05)
         rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
         pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)

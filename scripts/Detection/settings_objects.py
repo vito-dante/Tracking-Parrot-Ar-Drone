@@ -1,4 +1,3 @@
-
 # SCREEN SETTING
 MAX_X = 640
 MAX_Y = 360

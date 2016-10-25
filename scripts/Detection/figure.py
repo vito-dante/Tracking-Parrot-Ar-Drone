@@ -33,7 +33,7 @@ class FigureStatus(object):
 
     def actualizarSituacion(self, pxc, pyc, ptamano):
 
-        #it takes 5 pociento the size to see if the continuous drone
+        #it takes 5 percentage the size to see if the continuous drone
         # in the same place.
         # if the size of the object to be located
         # passes or is less than 5 percent in the next state figure

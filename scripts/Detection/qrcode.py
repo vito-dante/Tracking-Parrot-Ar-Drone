@@ -11,7 +11,8 @@ class qrCode(FigureStatus):
         self.myName = "Vito Marca Vilte"
 
     def findObject(self, image):
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY, dstCn=0)
+        image_copy = image
+        gray = cv2.cvtColor(image_copy, cv2.COLOR_BGR2GRAY, dstCn=0)
         pil = Image.fromarray(gray)
         width, height = pil.size
         raw = pil.tobytes()
