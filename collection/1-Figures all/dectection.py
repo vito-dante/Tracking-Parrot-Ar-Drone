@@ -7,7 +7,6 @@ gray = cv2.imread('shapes1.png',0)
 ret,thresh = cv2.threshold(gray,127,255,1)
 
 contours,h = cv2.findContours(thresh,1,2)
-print("dante es vito")
 
 for cnt in contours:
     approx = cv2.approxPolyDP(cnt,0.11*cv2.arcLength(cnt,True),True)

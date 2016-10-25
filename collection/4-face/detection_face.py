@@ -2,7 +2,6 @@ import cv2
 
 cascPath = 'haarcascade_frontalface_alt_tree.xml'
 faceCascade = cv2.CascadeClassifier(cascPath)
-print("vito es el mejor")
 video_capture = cv2.VideoCapture(0)
 
 while True:

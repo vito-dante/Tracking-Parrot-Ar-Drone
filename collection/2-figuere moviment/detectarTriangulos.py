@@ -1,10 +1,6 @@
-#Algoritmo de deteccion de triangulos
-#Por Glar3
-#
-#
 #Detecta triangulos azules
  
-#Librerias
+#Bibliotecas
 import cv2
 import numpy as np
  
