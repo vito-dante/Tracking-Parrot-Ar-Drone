@@ -3,6 +3,7 @@ tracking with parrot ar drone 2.0
 
 #Dependencies
 - ROS(indigo)
+- ardroneAutono
 - opencv(2.4)
 - python(2.7)
 - imutils
@@ -10,16 +11,33 @@ tracking with parrot ar drone 2.0
 - PIL
 - numpy
 
-#Docker install 
+# install depencies 
+##Docker and ROS indigo 
 `docker run -it \
     --env="DISPLAY" \
     --env="QT_X11_NO_MITSHM=1" \
     --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
-    osrf/ros:indigo-desktop-full \
-    rqt
+    osrf/ros:indigo-desktop-full
 export containerId=$(docker ps -l -q)`
-
 [More info](http://wiki.ros.org/docker/Tutorials/GUI#The_simple_way)
+
+##unzip 
+`sudo apt-get install unzip`
+
+##OpenCV 
+execute script `chmod +x opencv_install.sh ; ./opencv_install.sh`
+
+##imutils
+`pip install imutils`
+
+##zbar
+`pip install zbar`
+
+##PIL or pillow
+`pip install Pillow`
+
+## ignore libdc1394 
+`sudo ln /dev/null /dev/raw1394`
 
 
 ## License
