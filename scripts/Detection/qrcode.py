@@ -11,8 +11,7 @@ class qrCode(FigureStatus):
         self.myName = "Vito Marca Vilte"
 
     def findObject(self, image):
-        image_copy = image
-        gray = cv2.cvtColor(image_copy, cv2.COLOR_BGR2GRAY, dstCn=0)
+        gray = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY, dstCn=0)
         pil = Image.fromarray(gray)
         width, height = pil.size
         raw = pil.tobytes()
@@ -33,7 +32,6 @@ class qrCode(FigureStatus):
                 pointLocationY = ((d - e)/2.0) + e
                 #TODO SIZE relative change to size fixed
                 size = a - c
-
                 self.actualizarSituacion(pointLocationX, pointLocationY, size)
                 return image
         self.actualizarSituacion(-1,-1,-1)

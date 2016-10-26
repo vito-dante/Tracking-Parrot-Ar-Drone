@@ -6,6 +6,8 @@ import rospy
 
 import sys
 
+#TODO QtGui to put combo box for objectTarget, secondaryTarget
+# TODO ImageWithoutProcessing, ProcessingImage
 # Librerary for GUI (window)
 from PySide import QtCore, QtGui
 
@@ -46,20 +48,11 @@ from cv_bridge import CvBridge
 from cv_bridge import CvBridgeError
 bridge = CvBridge()
 
+
 class SeguirObjeto(QtGui.QMainWindow):
-
-    # ObjectTarget: It is the main object for tracking
-    # secondaryTarget: It is used to give an animation to drone like flip
-
-    objectTarget = Face()
-    # objectTarget = Body()
-    secondaryTarget = Ball()
-    # secondaryTarget = qrCode()
 
     DroneStatus = DroneStatus()
     ObjectStatus = ObjectStatus()
-
-    imageOpencv = None
 
     # status of the drone for the windows
     StatusMessages = {
@@ -94,13 +87,13 @@ class SeguirObjeto(QtGui.QMainWindow):
 
         super(SeguirObjeto, self).__init__()
 
+        self.settings_navigation()
         # title window
         self.setWindowTitle('Vision del drone')
         # imageBox, where the window will be drawn
         #here come the FPS
         self.imageBox = QtGui.QLabel(self)
         self.setCentralWidget(self.imageBox)
-
         # to receive data from drone
         self.subNavdata = rospy.Subscriber(
             '/ardrone/navdata', Navdata, self.ReceiveNavdata)
@@ -114,6 +107,9 @@ class SeguirObjeto(QtGui.QMainWindow):
         # a lock is required so that there is a synchronization
         # between the reception of the current image and the previous
         self.imageLock = Lock()
+
+        #image convert to opencv
+        self.imageOpencv = None
 
         # drone status message to be shown in the GUI
         self.statusMessage = ''
@@ -134,6 +130,15 @@ class SeguirObjeto(QtGui.QMainWindow):
         self.redrawTimer.timeout.connect(self.RedrawCallback)
         self.redrawTimer.start(GUI_UPDATE_PERIOD)
 
+    def settings_navigation(self, detectionObject=True, objectTarget=Face, secondaryTarget=qrCode):
+        # ObjectTarget: It is the main object for tracking
+        # secondaryTarget: It is used to give an animation to drone like flip
+        self.detectionObject = detectionObject
+        self.objectTarget = objectTarget()
+        self.secondaryTarget = secondaryTarget()
+
+    def buttonAction(self):
+        self.settings_navigation()
 
     def ConnectionCallback(self):
         self.connected = self.communicationSinceTimer
@@ -142,10 +147,10 @@ class SeguirObjeto(QtGui.QMainWindow):
         # ROS IMAGE converted to OpenCV
     def ToOpenCV(self, ros_image):
         try:
-            self.imageOpencv = bridge.imgmsg_to_cv2(ros_image, "bgr8")
-        except CvBridgeError, e:
+            self.imageOpencv = bridge.imgmsg_to_cv2(ros_image, desired_encoding="passthrough")
+        except CvBridgeError as e:
             print (e)
-            raise Exception("Falla en conversion de imagen para OpenCV")
+            raise Exception("failure in convertion to OpenCV image")
 
     def RedrawCallback(self):
         if self.image is not None:
@@ -155,14 +160,11 @@ class SeguirObjeto(QtGui.QMainWindow):
             try:
                 self.ToOpenCV(self.image)#Covierte de ROS para OpenCV
                 # detection object
-                frame = self.objectTarget.findObject(self.imageOpencv)
-                #frame of type RGB
-                # frame = self.secondaryTarget.findObject(frame)
+                if self.detectionObject:
+                    image = self.ProcessingImage(self.imageOpencv)
+                else:
+                    image = self.ImageWithoutProcessing(self.imageOpencv)
 
-                image = QtGui.QImage(frame,
-                                     frame.shape[1],
-                                     frame.shape[0],
-                                     QtGui.QImage.Format_RGB888)
                 pix = QtGui.QPixmap.fromImage(image)
 
             finally:
@@ -177,6 +179,23 @@ class SeguirObjeto(QtGui.QMainWindow):
         # updates a message with the current situation of the drone
         self.statusBar().showMessage(
             self.statusMessage if self.connected else self.DisconnectedMessage)
+
+    def ImageWithoutProcessing(self,image):
+        image = QtGui.QImage(image,
+                            640,
+                            360,
+                            QtGui.QImage.Format_RGB888)
+        return image
+
+    def ProcessingImage(self,image):
+        frame = self.objectTarget.findObject(image)
+        frame = self.secondaryTarget.findObject(frame)
+
+        image = QtGui.QImage(frame,
+                             frame.shape[1],
+                             frame.shape[0],
+                             QtGui.QImage.Format_RGB888)
+        return image
 
     # Function that is called when a new image arrives
     def ReceiveImage(self, data):
@@ -213,7 +232,7 @@ class SeguirObjeto(QtGui.QMainWindow):
         if controller is not None:
             if self.secondaryTarget.estado == self.ObjectStatus.appeared:
                     self.flip_animation("/ardrone/setflightanimation", FlightAnim)
-                    # self.changeCamera("/ardrone/togglecam", Empty)
+                    # self.changeCamera_flatTrim("/ardrone/togglecam", Empty)
 
             elif self.objectTarget.estado == self.ObjectStatus.disapared:
                     # controller.SendTakeoff_SendLand()
@@ -262,7 +281,7 @@ class SeguirObjeto(QtGui.QMainWindow):
         key = event.key()
         if controller is not None and not event.isAutoRepeat():
             if key == QtCore.Qt.Key.Key_Space:   # space for  takeoff or land
-                controller.SendTakeoff_SendLand()
+                controller.Takeoff_Land_toggle()
             elif key == QtCore.Qt.Key_W: # key "W" for forward
                 controller.SetCommand(0, PORCENTAJE_VELOCIDAD, 0, 0)
             elif key == QtCore.Qt.Key_S: # key "S" for backward
@@ -284,19 +303,26 @@ class SeguirObjeto(QtGui.QMainWindow):
             elif key == QtCore.Qt.Key_R: # key "R" change emergency mode
                 controller.SendEmergency()
             elif key == QtCore.Qt.Key_P: # key "P" change camera
-                self.changeCamera("/ardrone/togglecam", Empty)
+                self.changeCamera_flatTrim("/ardrone/togglecam", Empty)
             elif key == QtCore.Qt.Key_B: # key "B" animation led
                 self.ledAnimation("/ardrone/setledanimation", LedAnim)
             elif key == QtCore.Qt.Key_X: # key "X" FLIP animation
                 self.flip_animation("/ardrone/setflightanimation", FlightAnim)
+            elif key == QtCore.Qt.Key_F: # key "F" flat trim
+                self.changeCamera_flatTrim("/ardrone/flattrim", Empty)
+            elif key == QtCore.Qt.Key_Z: # key "z" detection
+                if self.detectionObject:
+                    self.detectionObject= False
+                else:
+                    self.detectionObject = True
 
-
-    def changeCamera(self, serviceDrone, estructuraParam):
+    # service change camera and flat trim receive same parameter
+    def changeCamera_flatTrim(self, serviceDrone, estructuraParam):
         rospy.wait_for_service(serviceDrone)
         try:
             proxyDrone = rospy.ServiceProxy(serviceDrone, estructuraParam)
             proxyDrone()
-        except rospy.ServiceException, e:
+        except rospy.ServiceException as e:
             print("Failed services %s"%(e))
 
     def ledAnimation(self,serviceDrone, estructuraParam, typeofAnimation=1,
@@ -305,7 +331,7 @@ class SeguirObjeto(QtGui.QMainWindow):
         try:
             proxyDrone = rospy.ServiceProxy(serviceDrone, estructuraParam)
             proxyDrone(typeofAnimation, frequency, duration)
-        except rospy.ServiceException, e:
+        except rospy.ServiceException as e:
             print("Failed services %s"%(e))
 
     def flip_animation(self,serviceDrone, estructuraParam, typeofAnimation=1, duration=0,):
@@ -313,9 +339,8 @@ class SeguirObjeto(QtGui.QMainWindow):
         try:
             proxyDrone = rospy.ServiceProxy(serviceDrone, estructuraParam)
             proxyDrone(typeofAnimation, duration)
-        except rospy.ServiceException, e:
+        except rospy.ServiceException as e:
             print("Failed services %s"%(e))
-
 
 if __name__ == '__main__':
     # Starts the node

@@ -2,7 +2,6 @@ from __future__ import print_function
 from .figure import FigureStatus
 from imutils.object_detection import non_max_suppression
 import numpy as np
-import imutils
 import cv2
 
 hog = cv2.HOGDescriptor()
@@ -14,9 +13,7 @@ class Body(FigureStatus):
         super(Body, self).__init__()
 
     def findObject(self, image):
-        image_copy = image
-        # image = imutils.resize(image, width=min(360, image.shape[1]))
-        (rects, weights) = hog.detectMultiScale(image_copy, winStride=(4, 4),
+        (rects, weights) = hog.detectMultiScale(image.copy(), winStride=(4, 4),
                                                 padding=(8, 8), scale=1.05)
         rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
         pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)

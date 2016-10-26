@@ -11,8 +11,7 @@ class Face(FigureStatus):
         super(Face, self).__init__()
 
     def findObject(self, image):
-        image_copy = image
-        hsv = cv2.cvtColor(image_copy, cv2.COLOR_BGR2GRAY)
+        hsv = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
         faces = faceCascade.detectMultiScale(
             hsv,
             scaleFactor=1.1,
@@ -25,9 +24,7 @@ class Face(FigureStatus):
             # for (x, y, w, h) in faces:
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
             self.actualizarSituacion(x, y, w)
-            cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             return image
         else:
             self.actualizarSituacion(-1, -1, -1)
-            cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             return image

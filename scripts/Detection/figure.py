@@ -1,7 +1,7 @@
 from .objectStatus import ObjectStatus
-from settings_objects import MAX_X
-from settings_objects import MAX_Y
-
+# SCREEN SETTING, this size is equal than size image asked for ros image
+MAX_X = 640
+MAX_Y = 360
 # Percentage considered for margin, in relation to the image
 PORC_MARGEN = 0.15
 MARGEN_IZQ = MAX_X * PORC_MARGEN
