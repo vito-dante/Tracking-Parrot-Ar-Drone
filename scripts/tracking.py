@@ -86,14 +86,32 @@ class SeguirObjeto(QtGui.QMainWindow):
     def __init__(self):
 
         super(SeguirObjeto, self).__init__()
+        self.imageS = None
 
+        #settings objects recognition
         self.settings_navigation()
+
         # title window
         self.setWindowTitle('Vision del drone')
         # imageBox, where the window will be drawn
         #here come the FPS
         self.imageBox = QtGui.QLabel(self)
+        self.imageBox.setScaledContents(True)
+        #TODO SETTING ALL CONFIG SIZE 640 360
+        self.resize(640,360)
         self.setCentralWidget(self.imageBox)
+        self.centerOnScreen()
+        # # layout = QtGui.QHBoxLayout(self)
+        # self.cb = QtGui.QComboBox(self)
+        # self.cb.addItem("C")
+        # self.cb.addItem("C++")
+        # self.cb.addItems(["Java", "C#", "Python"])
+        # self.cb.currentIndexChanged.connect(self.selectionchange)
+
+        # layout.addWidget(self.cb)
+        # self.setLayout(layout)
+        # self.setWindowTitle("combo box demo")
+
         # to receive data from drone
         self.subNavdata = rospy.Subscriber(
             '/ardrone/navdata', Navdata, self.ReceiveNavdata)
@@ -130,7 +148,18 @@ class SeguirObjeto(QtGui.QMainWindow):
         self.redrawTimer.timeout.connect(self.RedrawCallback)
         self.redrawTimer.start(GUI_UPDATE_PERIOD)
 
-    def settings_navigation(self, detectionObject=True, objectTarget=Face, secondaryTarget=qrCode):
+    def centerOnScreen(self):
+        resolution = QtGui.QDesktopWidget().screenGeometry()
+        self.move((resolution.width() / 2) - (self.frameSize().width() / 2),
+                  (resolution.height() / 2) - (self.frameSize().height() / 2))
+    def selectionchange(self, i):
+        print ("Items in the list are :")
+
+        for count in range(self.cb.count()):
+            print (self.cb.itemText(count))
+        print ("Current index", i, "selection changed ", self.cb.currentText())
+
+    def settings_navigation(self, detectionObject=False, objectTarget=Face, secondaryTarget=qrCode):
         # ObjectTarget: It is the main object for tracking
         # secondaryTarget: It is used to give an animation to drone like flip
         self.detectionObject = detectionObject
@@ -161,24 +190,31 @@ class SeguirObjeto(QtGui.QMainWindow):
                 self.ToOpenCV(self.image)#Covierte de ROS para OpenCV
                 # detection object
                 if self.detectionObject:
-                    image = self.ProcessingImage(self.imageOpencv)
+                    self.imageS = self.ProcessingImage(self.imageOpencv)
                 else:
-                    image = self.ImageWithoutProcessing(self.imageOpencv)
+                    self.imageS = self.ImageWithoutProcessing(self.imageOpencv)
 
-                pix = QtGui.QPixmap.fromImage(image)
+                pix = QtGui.QPixmap.fromImage(self.imageS)
 
             finally:
                 self.imageLock.release()
-
             # Displays an image in the window of the GUI
-            self.resize(image.width(), image.height())
             self.imageBox.setPixmap(pix)
+            self.imageBox.setMinimumSize(1, 1)
+            self.imageBox.installEventFilter(self)
             # Motion for the drone
             self.moverDrone()
 
         # updates a message with the current situation of the drone
         self.statusBar().showMessage(
             self.statusMessage if self.connected else self.DisconnectedMessage)
+
+    def eventFilter(self, source, event):
+        if (source is self.imageBox and event.type() == QtCore.QEvent.Resize):
+            # re-scale the pixmap when the label resizes
+            pix = QtGui.QPixmap.fromImage(self.imageS)
+            self.imageBox.setPixmap(pix)
+        return super(SeguirObjeto, self).eventFilter(source, event)
 
     def ImageWithoutProcessing(self,image):
         image = QtGui.QImage(image,
