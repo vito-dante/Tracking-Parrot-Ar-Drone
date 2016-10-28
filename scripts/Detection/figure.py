@@ -1,4 +1,4 @@
-from .objectStatus import ObjectStatus
+from .object_status import ObjectStatus
 # SCREEN SETTING, this size is equal than size image asked for ros image
 MAX_X = 640
 MAX_Y = 360
@@ -28,10 +28,10 @@ class FigureStatus(object):
         #initial state of the object
         self.estado = ObjectStatus.disapared
 
-    def findObject(self,image):
+    def find_object(self, image):
         pass
 
-    def actualizarSituacion(self, pxc, pyc, ptamano):
+    def actualizar_situacion(self, pxc, pyc, ptamano):
 
         #it takes 5 percentage the size to see if the continuous drone
         # in the same place.
@@ -47,7 +47,7 @@ class FigureStatus(object):
         if  self.estado_antes == self.estado and \
                 self.estado != ObjectStatus.disapared and \
                 ptamano > ptamano_inf and ptamano < ptamano_sup:
-            self.estado = ObjectStatus.samePlace
+            self.estado = ObjectStatus.same_place
 
         # If the size of before was -1 it is because the object
         #  did not appear in the image
@@ -61,24 +61,24 @@ class FigureStatus(object):
 
         elif self.tamano_antes != -1 and ptamano != -1:
 
-            # like "Object Status.samePlace" 10 percent is used
+            # like "Object Status.same_place" 10 percent is used
             # to see if the object became larger or perqueno
             front = self.tamano_antes + (self.tamano_antes*0.1)
             behind = self.tamano_antes - (self.tamano_antes*0.1)
 
             # image is inverted
             if pxc > MARGEN_DER:
-                self.estado = ObjectStatus.movedLeft
+                self.estado = ObjectStatus.moved_left
             elif pxc < MARGEN_IZQ:
-                self.estado = ObjectStatus.movedRight
+                self.estado = ObjectStatus.moved_right
             elif pyc > MARGEN_ARRIBA:
-                self.estado = ObjectStatus.movedDown
+                self.estado = ObjectStatus.moved_down
             elif pyc < MARGEN_ABAJO:
-                self.estado = ObjectStatus.movedUp
+                self.estado = ObjectStatus.moved_up
             elif ptamano > front:
-                self.estado =  ObjectStatus.movedFront
+                self.estado =  ObjectStatus.moved_front
             elif ptamano < behind:
-                self.estado =  ObjectStatus.movedBack
+                self.estado =  ObjectStatus.moved_back
 
         # updated object variables
         self.tamano_antes = self.tamano

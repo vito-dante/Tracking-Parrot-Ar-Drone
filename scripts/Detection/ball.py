@@ -25,7 +25,7 @@ class Ball(FigureStatus):
         self.mask = None
         self.frame = None
 
-    def segmentaObjetosColorRoi(self):
+    def segmenta_objetos_color_roi(self):
         cv2.GaussianBlur(self.frame, (11, 11), 0)
         hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
 
@@ -34,7 +34,7 @@ class Ball(FigureStatus):
         self.mask = cv2.dilate(self.mask, None, iterations=2)
 
     # analyzes the image related components
-    def detectaObjetoMasRedondo(self):
+    def detecta_objeto_mas_redondo(self):
 
         cnts = cv2.findContours(self.mask,
                                 cv2.RETR_EXTERNAL,
@@ -66,14 +66,14 @@ class Ball(FigureStatus):
                     # draw the connecting lines
                     thickness = int(np.sqrt(queque / float(i + 1)) * 2.5)
                     cv2.line(self.frame, pts[i - 1], pts[i], (255, 0, 0), thickness)
-                    #TODO add size to actualizarSituacion
-                self.actualizarSituacion(x, y, 5)
+                    #TODO add size to actualizar_situacion
+                self.actualizar_situacion(x, y, 5)
         else:
-            self.actualizarSituacion(-1, -1, -1)
+            self.actualizar_situacion(-1, -1, -1)
 
 
-    def findObject(self, image):
+    def find_object(self, image):
         self.frame = image
-        self.segmentaObjetosColorRoi()
-        self.detectaObjetoMasRedondo()
+        self.segmenta_objetos_color_roi()
+        self.detecta_objeto_mas_redondo()
         return self.frame

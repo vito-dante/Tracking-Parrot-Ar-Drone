@@ -12,7 +12,7 @@ class Body(FigureStatus):
     def __init__(self):
         super(Body, self).__init__()
 
-    def findObject(self, image):
+    def find_object(self, image):
         (rects, weights) = hog.detectMultiScale(image.copy(), winStride=(4, 4),
                                                 padding=(8, 8), scale=1.05)
         rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
@@ -25,7 +25,7 @@ class Body(FigureStatus):
             x = ((xB - xA) /2.0) + xA
             y = ((yB - yA) / 2.0) + yA
             size = xB - xA
-            self.actualizarSituacion(x,y,size)
+            self.actualizar_situacion(x, y, size)
         else:
-            self.actualizarSituacion(-1, -1, -1)
+            self.actualizar_situacion(-1, -1, -1)
         return image

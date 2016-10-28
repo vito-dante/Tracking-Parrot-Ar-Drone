@@ -10,7 +10,7 @@ class qrCode(FigureStatus):
         self.scanner.parse_config('enable')
         self.myName = "Vito Marca Vilte"
 
-    def findObject(self, image):
+    def find_object(self, image):
         gray = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY, dstCn=0)
         pil = Image.fromarray(gray)
         width, height = pil.size
@@ -32,7 +32,7 @@ class qrCode(FigureStatus):
                 pointLocationY = ((d - e)/2.0) + e
                 #TODO SIZE relative change to size fixed
                 size = a - c
-                self.actualizarSituacion(pointLocationX, pointLocationY, size)
+                self.actualizar_situacion(pointLocationX, pointLocationY, size)
                 return image
-        self.actualizarSituacion(-1,-1,-1)
+        self.actualizar_situacion(-1, -1, -1)
         return image

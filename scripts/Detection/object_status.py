@@ -30,30 +30,30 @@ class ObjectStatus(object):
          return self.__disapared
 
      @property
-     def movedLeft(self):
+     def moved_left(self):
          return self.__movedLeft
 
      @property
-     def movedRight(self):
+     def moved_right(self):
          return self.__movedRight
 
      @property
-     def movedUp(self):
+     def moved_up(self):
         return self.__movedUp
 
      @property
-     def movedDown(self):
+     def moved_down(self):
         return self.__movedDown
 
      @property
-     def movedFront(self):
+     def moved_front(self):
         return self.__movedFront
 
      @property
-     def movedBack(self):
+     def moved_back(self):
         return self.__movedBack
 
      @property
-     def samePlace(self):
+     def same_place(self):
         return self.__samePlace
 

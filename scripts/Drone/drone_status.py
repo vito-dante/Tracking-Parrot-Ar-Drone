@@ -17,8 +17,8 @@ class DroneStatus(object):
          self.__flying = 3
          self.__hovering = 4
          self.__test = 5
-         self.__takingoff = 6
-         self.__gotohover = 7
+         self.__taking_off = 6
+         self.__go_to_hover = 7
          self.__landing = 8
          self.__looping = 9
 
@@ -54,14 +54,14 @@ class DroneStatus(object):
          return self.__test
 
      @property
-     def takingoff(self):
-         """get the current status takingoff"""
-         return self.__takingoff
+     def taking_off(self):
+         """get the current status taking_off"""
+         return self.__taking_off
 
      @property
-     def gotohover(self):
-         """get the current status gotohover"""
-         return self.__gotohover
+     def go_to_hover(self):
+         """get the current status go_to_hover"""
+         return self.__go_to_hover
 
      @property
      def landing(self):

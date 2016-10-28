@@ -1,5 +1,6 @@
 
 import cv2
+import rospy
 from .figure import FigureStatus
 
 import os
@@ -10,7 +11,7 @@ class Face(FigureStatus):
     def __init__(self):
         super(Face, self).__init__()
 
-    def findObject(self, image):
+    def find_object(self, image):
         hsv = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
         faces = faceCascade.detectMultiScale(
             hsv,
@@ -23,8 +24,10 @@ class Face(FigureStatus):
             (x, y, w, h) = faces[0]
             # for (x, y, w, h) in faces:
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            self.actualizarSituacion(x, y, w)
+            self.actualizar_situacion(x, y, w)
+            rospy.loginfo("x:{} y:{}".format(x,y))
+
             return image
         else:
-            self.actualizarSituacion(-1, -1, -1)
+            self.actualizar_situacion(-1, -1, -1)
             return image
