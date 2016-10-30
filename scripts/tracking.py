@@ -3,6 +3,7 @@
 from threading import Lock
 
 import rospy
+import cv2
 
 import sys
 
@@ -54,6 +55,9 @@ class SeguirObjeto(QtGui.QMainWindow):
     DroneStatus = DroneStatus()
     ObjectStatus = ObjectStatus()
 
+    refPt = []
+    cropping = False
+
     # status of the drone for the windows
     StatusMessages = {
         DroneStatus.emergency: 'Emergencia',
@@ -86,6 +90,10 @@ class SeguirObjeto(QtGui.QMainWindow):
     def __init__(self):
 
         super(SeguirObjeto, self).__init__()
+
+        #crop image ROI
+        cv2.namedWindow("image")
+        cv2.setMouseCallback("image", self.click_and_crop)
 
         #settings objects recognition
         self.settings_navigation()
@@ -142,13 +150,12 @@ class SeguirObjeto(QtGui.QMainWindow):
         self.move((resolution.width() / 2) - (self.frameSize().width() / 2),
                   (resolution.height() / 2) - (self.frameSize().height() / 2))
 
-    def settings_navigation(self, detectionObject=False, objectTarget=Face, secondaryTarget=qrCode):
+    def settings_navigation(self, detectionObject=False, objectTarget=Ball, secondaryTarget=qrCode):
         # ObjectTarget: It is the main object for tracking
         # secondaryTarget: It is used to give an animation to drone like flip
         self.detectionObject = detectionObject
         self.objectTarget = objectTarget()
         self.secondaryTarget = secondaryTarget()
-
 
     def connection_callback(self):
         self.connected = self.communicationSinceTimer
@@ -169,6 +176,9 @@ class SeguirObjeto(QtGui.QMainWindow):
             self.imageLock.acquire()
             try:
                 self.to_opencv(self.image)#Covierte de ROS para OpenCV
+                # show window from OpenCv
+                cv2.imshow("image", self.imageOpencv)
+
                 # detection object
                 if self.detectionObject:
                     image = self.processing_image(self.imageOpencv)
@@ -186,6 +196,23 @@ class SeguirObjeto(QtGui.QMainWindow):
         # updates a message with the current situation of the drone
         self.statusBar().showMessage(
             self.statusMessage if self.connected else self.DisconnectedMessage)
+
+    def click_and_crop(self,event, x, y, flags, param):
+        # if the left mouse button was clicked, record the starting
+        # (x, y) coordinates and indicate that cropping is being
+        # performed
+        if event == cv2.EVENT_LBUTTONDOWN:
+            self.refPt = [(x, y)]
+            self.cropping = True
+        # check to see if the left mouse button was released
+        elif event == cv2.EVENT_LBUTTONUP:
+            # record the ending (x, y) coordinates and indicate that
+            # the cropping operation is finished
+            self.refPt.append((x, y))
+            self.cropping = False
+            # draw a rectangle around the region of interest
+            cv2.rectangle(self.imageOpencv, self.refPt[0], self.refPt[1], (0, 255, 0), 2)
+            cv2.imshow("image", self.imageOpencv)
 
     def image_without_processing(self, image):
         image = QtGui.QImage(image,
@@ -229,11 +256,9 @@ class SeguirObjeto(QtGui.QMainWindow):
             navdata.state] if navdata.state in self.StatusMessages else self.UnknownMessage
         msgTarget = self.MessageSituacion[self.objectTarget.estado]
 
-
         # the object type and battery
         self.statusMessage = '{} | Target: {} Status: {} |Target2:{} |(Battery: {}%)'.format(
             msg, "FaceDetection",msgTarget,"nothign", int(navdata.batteryPercent))
-
 
     def mover_drone(self):
         # verifies if the driver is ready to use drone
@@ -318,6 +343,20 @@ class SeguirObjeto(QtGui.QMainWindow):
                 self.flip_animation("/ardrone/setflightanimation", FlightAnim)
             elif key == QtCore.Qt.Key_F: # key "F" flat trim
                 self.change_camera_flatTrim("/ardrone/flattrim", Empty)
+            elif key == QtCore.Qt.Key_2:
+                if type(self.objectTarget) is type(Ball()):
+                    # if there are two reference points, then crop the region of interest
+                    # from teh image and display it
+                    if len(self.refPt) == 2:
+                        clone = self.imageOpencv.copy()
+                        roi = clone[self.refPt[0][1]:self.refPt[1][1], self.refPt[0][0]:self.refPt[1][0]]
+                        min_val, max_val, _, _ = cv2.minMaxLoc(roi)
+                        print(min_val)
+                        print(max_val)
+                        print("HERE")
+                        cv2.imshow("ROI", roi)
+                        # self.objectTarget.set_color_hsv([12,12,12],[24,54,65])
+
             elif key == QtCore.Qt.Key_Z: # key "z" detection
                 if self.detectionObject:
                     self.detectionObject= False

@@ -27,14 +27,8 @@ export containerId=$(docker ps -l -q)`
 ##OpenCV 
 execute script `chmod +x opencv_install.sh ; ./opencv_install.sh`
 
-##imutils
-`pip install imutils`
-
-##zbar
-`pip install zbar`
-
-##PIL or pillow
-`pip install Pillow`
+##imutils, zbar, pillow 
+`pip install -r requirements.txt`
 
 ## ignore libdc1394 
 `sudo ln /dev/null /dev/raw1394`

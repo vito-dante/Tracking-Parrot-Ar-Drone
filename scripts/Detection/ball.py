@@ -5,12 +5,12 @@ import numpy as np
 
 # Color space
 # The values below were obtained using ImageJ (image-> adjust-> threshold)
-MIN_H = 29
-MAX_H = 64
-MIN_S = 86
-MAX_S = 255
-MIN_V = 6
-MAX_V = 255
+MIN_H = 47
+MAX_H = 81
+MIN_S = 39
+MAX_S = 120
+MIN_V = 65
+MAX_V = 144
 # size draw = 64
 queque = 20
 pts = deque(maxlen=queque)
@@ -71,6 +71,9 @@ class Ball(FigureStatus):
         else:
             self.actualizar_situacion(-1, -1, -1)
 
+    def set_color_hsv(self,min,max):
+        self.greenLower = min
+        self.greenUpper = max
 
     def find_object(self, image):
         self.frame = image
