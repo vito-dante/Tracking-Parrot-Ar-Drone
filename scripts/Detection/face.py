@@ -26,7 +26,6 @@ class Face(FigureStatus):
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
             self.actualizar_situacion(x, y, w)
             rospy.loginfo("x:{} y:{}".format(x,y))
-            return image
         else:
             self.actualizar_situacion(-1, -1, -1)
-            return image
+        return image

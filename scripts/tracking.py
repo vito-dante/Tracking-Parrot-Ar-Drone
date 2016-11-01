@@ -90,10 +90,12 @@ class SeguirObjeto(QtGui.QMainWindow):
     def __init__(self):
 
         super(SeguirObjeto, self).__init__()
-
-        #crop image ROI
-        cv2.namedWindow("image")
-        cv2.setMouseCallback("image", self.click_and_crop)
+        #Drone Vision tracking
+        cv2.namedWindow('Drone Vision', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('Drone Vision', 640, 360)
+        # cv2.setMouseCallback("Drone Vision", self.click_and_crop)
+        xcenter,ycenter = self.center_on_screen()
+        cv2.moveWindow('Drone Vision',xcenter,ycenter)
 
         #settings objects recognition
         self.settings_navigation()
@@ -107,7 +109,7 @@ class SeguirObjeto(QtGui.QMainWindow):
         #TODO SETTING ALL CONFIG SIZE 640 360
         self.resize(640,360)
         self.setCentralWidget(self.imageBox)
-        self.center_on_screen()
+        self.move(xcenter,ycenter)
 
         # to receive data from drone
         self.subNavdata = rospy.Subscriber(
@@ -147,10 +149,12 @@ class SeguirObjeto(QtGui.QMainWindow):
 
     def center_on_screen(self):
         resolution = QtGui.QDesktopWidget().screenGeometry()
-        self.move((resolution.width() / 2) - (self.frameSize().width() / 2),
+        centre = ((resolution.width() / 2) - (self.frameSize().width() / 2),
                   (resolution.height() / 2) - (self.frameSize().height() / 2))
+        return centre
 
-    def settings_navigation(self, detectionObject=False, objectTarget=Ball, secondaryTarget=qrCode):
+
+    def settings_navigation(self, detectionObject=True, objectTarget=Ball, secondaryTarget=qrCode):
         # ObjectTarget: It is the main object for tracking
         # secondaryTarget: It is used to give an animation to drone like flip
         self.detectionObject = detectionObject
@@ -164,10 +168,10 @@ class SeguirObjeto(QtGui.QMainWindow):
         # ROS IMAGE converted to OpenCV
     def to_opencv(self, ros_image):
         try:
-            self.imageOpencv = bridge.imgmsg_to_cv2(ros_image, desired_encoding="passthrough")
+            # 'bgr8' | desired_encoding = "passthrough"
+            self.imageOpencv = bridge.imgmsg_to_cv2(ros_image, 'bgr8')
         except CvBridgeError as e:
-            print (e)
-            raise Exception("failure in convertion to OpenCV image")
+            raise Exception("failure in conversion OpenCV image: {}".format(e))
 
     def redraw_callback(self):
         if self.image is not None:
@@ -176,26 +180,32 @@ class SeguirObjeto(QtGui.QMainWindow):
             self.imageLock.acquire()
             try:
                 self.to_opencv(self.image)#Covierte de ROS para OpenCV
-                # show window from OpenCv
-                cv2.imshow("image", self.imageOpencv)
-
                 # detection object
                 if self.detectionObject:
-                    image = self.processing_image(self.imageOpencv)
-                else:
-                    image = self.image_without_processing(self.imageOpencv)
+                    self.find_objects_all(self.imageOpencv)
+                rgb_qtimage = cv2.cvtColor(self.imageOpencv, cv2.COLOR_BGR2RGB)
+                image = QtGui.QImage(rgb_qtimage,
+                                     640,
+                                     360,
+                                     QtGui.QImage.Format_RGB888)
                 pix = QtGui.QPixmap.fromImage(image)
             finally:
                 self.imageLock.release()
+
             # Displays an image in the window of the GUI
             self.imageBox.setPixmap(pix)
             # self.imageBox.setMinimumSize(320, 180)
             # Motion for the drone
             self.mover_drone()
-
+        else:
+            print("there is no image AAA")
         # updates a message with the current situation of the drone
         self.statusBar().showMessage(
             self.statusMessage if self.connected else self.DisconnectedMessage)
+
+    def find_objects_all(self,image):
+        self.imageOpencv = self.objectTarget.find_object(image)
+        self.imageOpencv = self.secondaryTarget.find_object(self.imageOpencv)
 
     def click_and_crop(self,event, x, y, flags, param):
         # if the left mouse button was clicked, record the starting
@@ -212,24 +222,7 @@ class SeguirObjeto(QtGui.QMainWindow):
             self.cropping = False
             # draw a rectangle around the region of interest
             cv2.rectangle(self.imageOpencv, self.refPt[0], self.refPt[1], (0, 255, 0), 2)
-            cv2.imshow("image", self.imageOpencv)
-
-    def image_without_processing(self, image):
-        image = QtGui.QImage(image,
-                            640,
-                            360,
-                            QtGui.QImage.Format_RGB888)
-        return image
-
-    def processing_image(self, image):
-        frame = self.objectTarget.find_object(image)
-        frame = self.secondaryTarget.find_object(frame)
-
-        image = QtGui.QImage(frame,
-                             frame.shape[1],
-                             frame.shape[0],
-                             QtGui.QImage.Format_RGB888)
-        return image
+            cv2.imshow('Drone Vision', self.imageOpencv)
 
     # Function that is called when a new image arrives
     def receive_image(self, data):
@@ -348,14 +341,35 @@ class SeguirObjeto(QtGui.QMainWindow):
                     # if there are two reference points, then crop the region of interest
                     # from teh image and display it
                     if len(self.refPt) == 2:
+                        # crop image ROI
+                        cv2.namedWindow("ROI")
                         clone = self.imageOpencv.copy()
-                        roi = clone[self.refPt[0][1]:self.refPt[1][1], self.refPt[0][0]:self.refPt[1][0]]
-                        min_val, max_val, _, _ = cv2.minMaxLoc(roi)
-                        print(min_val)
-                        print(max_val)
-                        print("HERE")
+                        roi=  clone[self.refPt[0][1]:self.refPt[1][1],
+                                  self.refPt[0][0]:self.refPt[1][0]]
+                        mean,stds = cv2.meanStdDev(roi)
                         cv2.imshow("ROI", roi)
-                        # self.objectTarget.set_color_hsv([12,12,12],[24,54,65])
+                        print(" START MEAN ")
+                        print(mean)
+                        print ("END MEAN")
+                        print("\n")
+                        print(" START STDS ")
+                        print(stds)
+                        print ("END STDS")
+
+                        bmin = mean[0] - stds[0]*3
+                        bmax = mean[0] + stds[0]*3
+                        gmin = mean[1] - stds[1]*3
+                        gmax = mean[1] + stds[1]*3
+                        rmin = mean[2] - stds[2]*3
+                        rmax = mean[2] + stds[2]*3
+                        lower = [bmin,gmin,rmin]
+                        upper = [bmax,gmax,rmax]
+                        # (MIN_H, MIN_S, MIN_V)
+                        print("==========")
+                        print(lower)
+                        print (upper)
+                        print("==========")
+                        self.objectTarget.set_color_hsv(lower,upper)
 
             elif key == QtCore.Qt.Key_Z: # key "z" detection
                 if self.detectionObject:

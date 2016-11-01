@@ -5,12 +5,12 @@ import numpy as np
 
 # Color space
 # The values below were obtained using ImageJ (image-> adjust-> threshold)
-MIN_H = 47
-MAX_H = 81
-MIN_S = 39
-MAX_S = 120
-MIN_V = 65
-MAX_V = 144
+MIN_H = 30
+MAX_H = 100
+MIN_S = 15
+MAX_S = 176
+MIN_V = 47
+MAX_V = 175
 # size draw = 64
 queque = 20
 pts = deque(maxlen=queque)
@@ -26,8 +26,9 @@ class Ball(FigureStatus):
         self.frame = None
 
     def segmenta_objetos_color_roi(self):
-        cv2.GaussianBlur(self.frame, (11, 11), 0)
-        hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        copy_image = self.frame.copy()
+        cv2.GaussianBlur(copy_image, (11, 11), 0)
+        hsv = cv2.cvtColor(copy_image, cv2.COLOR_BGR2HSV)
 
         self.mask = cv2.inRange(hsv, self.greenLower, self.greenUpper)
         self.mask = cv2.erode(self.mask, None, iterations=2)
@@ -56,7 +57,7 @@ class Ball(FigureStatus):
                 # draw the circle and centroid on the frame,
                 # then update the list of tracked points
                 cv2.circle(self.frame, (int(x), int(y)), int(radius),
-                        (255, 255, 0), 2)
+                        (0, 255, 255), 2)
                 cv2.circle(self.frame, center, 5, (0, 255, 0), -1)
                 # update the points queue
                 pts.appendleft(center)
@@ -65,7 +66,7 @@ class Ball(FigureStatus):
                     # otherwise, compute the thickness of the line and
                     # draw the connecting lines
                     thickness = int(np.sqrt(queque / float(i + 1)) * 2.5)
-                    cv2.line(self.frame, pts[i - 1], pts[i], (255, 0, 0), thickness)
+                    cv2.line(self.frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
                     #TODO add size to actualizar_situacion
                 self.actualizar_situacion(x, y, 5)
         else:
