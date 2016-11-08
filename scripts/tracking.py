@@ -7,9 +7,7 @@ import cv2
 
 import sys
 
-#TODO QtGui to put combo box for objectTarget, secondaryTarget
-# TODO image_without_processing, processing_image
-# Librerary for GUI (window)
+# Library for GUI (window)
 from PySide import QtCore, QtGui
 
 # status of the object(FACE,BALL,BODY)
@@ -26,11 +24,13 @@ from Detection.body import Body
 from Detection.face import Face
 from Detection.qrcode import qrCode
 
+#controlls
+from controll import WindowControl
 
 # settings
-from settings import CONNECTION_CHECK_PERIOD
-from settings import GUI_UPDATE_PERIOD
-from settings import PORCENTAJE_VELOCIDAD
+from settings import (CONNECTION_CHECK_PERIOD,
+                      GUI_UPDATE_PERIOD,
+                      PORCENTAJE_VELOCIDAD)
 
 # messages coming from ROS
 #To receive video frames
@@ -45,20 +45,15 @@ from ardrone_autonomy.msg import Navdata
 from ardrone_autonomy.srv import FlightAnim,LedAnim
 
 # To convert the picture type ROS to OpenCV
-from cv_bridge import CvBridge
-from cv_bridge import CvBridgeError
+from cv_bridge import CvBridge, CvBridgeError
 bridge = CvBridge()
 
 
 class SeguirObjeto(QtGui.QMainWindow):
 
+    # status of the drone for the windows
     DroneStatus = DroneStatus()
     ObjectStatus = ObjectStatus()
-
-    refPt = []
-    cropping = False
-
-    # status of the drone for the windows
     StatusMessages = {
         DroneStatus.emergency: 'Emergencia',
         DroneStatus.inited: 'Inciado',
@@ -71,6 +66,7 @@ class SeguirObjeto(QtGui.QMainWindow):
         DroneStatus.landing: 'Aterrizando',
         DroneStatus.looping: 'Realizando un Loop ?'
     }
+
     DisconnectedMessage = 'Desconectado'
     UnknownMessage = 'Estado Desconocido'
 
@@ -86,30 +82,73 @@ class SeguirObjeto(QtGui.QMainWindow):
         ObjectStatus.moved_back: 'MovioParaAtraz',
         ObjectStatus.same_place: 'Parada'
     }
+    # object detection
+    list_objects = [Ball, qrCode, Face, Body]
+
+    # key for opencv  another way convert to ASCII
+    # 1048695 &0xff(hexadecimal)
+    # from key to bytearray ASCII(ord) example ord('a') --> 119
+    k_w = 1048695
+    k_s = 1048691
+    k_a = 1048673
+    k_d = 1048676
+    k_space = 1048608
+    k_left = 1113937
+    k_right = 1113939
+    k_up = 1113938
+    k_down = 1113940
+    k_p = 1048688
+    k_l = 1048684
+    k_z = 1048698
+    k_x = 1048696
+    k_q = 1048689
+    k_2 = 1048626
+    k_r = 1048690
+    k_f = 1048678
+
+    # self.image: save the images captured by the drone
+    image = None
+    # a lock is required so that there is a synchronization
+    # between the reception of the current image and the previous
+    imageLock = Lock()
+
+    # image convert to opencv
+    imageOpencv = None
+
+    roi = None # for selection image
+    # To cut image from vision drone
+    refPt = []
+    cropping = False
+
+    # show message in window
+    statusMessage = ''
+    statusConnect = ''
+    statusBattery = ''
 
     def __init__(self):
 
         super(SeguirObjeto, self).__init__()
-        #Drone Vision tracking
+
+        #WINDOW1 --> Drone Vision
         cv2.namedWindow('Drone Vision', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('Drone Vision', 640, 360)
-        # cv2.setMouseCallback("Drone Vision", self.click_and_crop)
+        cv2.setMouseCallback("Drone Vision", self.click_and_crop)
         xcenter,ycenter = self.center_on_screen()
         cv2.moveWindow('Drone Vision',xcenter,ycenter)
 
+        #WINDOW2 --> Vision del drone
+        self.setWindowTitle('Vision del drone')
+        self.controllers = WindowControl(self)
+        self.controllers.object_detection_main.activated.connect(self.main_change_object)
+        self.controllers.secondary_object_detection.activated.connect(self.secondary_change_object)
+        self.setCentralWidget(self.controllers)
+
+        # WINDOW3 --> ROI
+        cv2.namedWindow('ROI', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('ROI', 640, 360)
+
         #settings objects recognition
         self.settings_navigation()
-
-        # title window
-        self.setWindowTitle('Vision del drone')
-        # imageBox, where the window will be drawn
-        #here come the FPS
-        self.imageBox = QtGui.QLabel(self)
-        self.imageBox.setScaledContents(True)
-        #TODO SETTING ALL CONFIG SIZE 640 360
-        self.resize(640,360)
-        self.setCentralWidget(self.imageBox)
-        self.move(xcenter,ycenter)
 
         # to receive data from drone
         self.subNavdata = rospy.Subscriber(
@@ -118,18 +157,6 @@ class SeguirObjeto(QtGui.QMainWindow):
         # to receive images from drone
         self.subVideo = rospy.Subscriber(
             '/ardrone/image_raw', Image, self.receive_image)
-
-        # self.image: save the images captured by the drone
-        self.image = None
-        # a lock is required so that there is a synchronization
-        # between the reception of the current image and the previous
-        self.imageLock = Lock()
-
-        #image convert to opencv
-        self.imageOpencv = None
-
-        # drone status message to be shown in the GUI
-        self.statusMessage = ''
 
         # used to know whether the drone receive data from the last time the timer disappeared
         self.communicationSinceTimer = False
@@ -153,8 +180,17 @@ class SeguirObjeto(QtGui.QMainWindow):
                   (resolution.height() / 2) - (self.frameSize().height() / 2))
         return centre
 
+    def main_change_object(self, index):
+        for order, object in enumerate(self.list_objects):
+            if order == index:
+                self.objectTarget = object()
 
-    def settings_navigation(self, detectionObject=True, objectTarget=Ball, secondaryTarget=qrCode):
+    def secondary_change_object(self, index):
+        for order, object in enumerate(self.list_objects):
+            if order == index:
+                self.secondaryTarget = object()
+
+    def settings_navigation(self, detectionObject=False, objectTarget=Ball, secondaryTarget=qrCode):
         # ObjectTarget: It is the main object for tracking
         # secondaryTarget: It is used to give an animation to drone like flip
         self.detectionObject = detectionObject
@@ -179,33 +215,39 @@ class SeguirObjeto(QtGui.QMainWindow):
             # the image is updated in the window
             self.imageLock.acquire()
             try:
-                self.to_opencv(self.image)#Covierte de ROS para OpenCV
-                # detection object
-                if self.detectionObject:
+                self.to_opencv(self.image) #Convert from ROS to OpenCV
+
+                if self.detectionObject: # detection object OFF or ON
                     self.find_objects_all(self.imageOpencv)
-                rgb_qtimage = cv2.cvtColor(self.imageOpencv, cv2.COLOR_BGR2RGB)
-                image = QtGui.QImage(rgb_qtimage,
-                                     640,
-                                     360,
-                                     QtGui.QImage.Format_RGB888)
-                pix = QtGui.QPixmap.fromImage(image)
+
+                # Draw rectangle until drop it mouse
+                if not self.cropping:
+                    cv2.imshow('Drone Vision', self.imageOpencv)
+                elif self.refPt:
+                    cv2.rectangle(self.imageOpencv, self.refPt[0], self.refPt[-1], (0, 255, 0), 2)
+                    cv2.imshow('Drone Vision', self.imageOpencv)  # show selection in WINDOW 'Drone Vision'
+
             finally:
                 self.imageLock.release()
 
-            # Displays an image in the window of the GUI
-            self.imageBox.setPixmap(pix)
-            # self.imageBox.setMinimumSize(320, 180)
-            # Motion for the drone
+            self.something(cv2.waitKey(33))# Capture key from WINDOW --> Drone Vision
+
             self.mover_drone()
-        else:
-            print("there is no image AAA")
+        self.show_status_in_window()
+
+    def show_status_in_window(self):
         # updates a message with the current situation of the drone
-        self.statusBar().showMessage(
-            self.statusMessage if self.connected else self.DisconnectedMessage)
+        self.controllers.status_drone.setText(self.statusConnect)
+        self.controllers.battery_status.setText(str(self.statusBattery))
+        self.controllers.status_objects_detection.setText(self.statusMessage)
 
     def find_objects_all(self,image):
         self.imageOpencv = self.objectTarget.find_object(image)
-        self.imageOpencv = self.secondaryTarget.find_object(self.imageOpencv)
+        # self.imageOpencv = self.secondaryTarget.find_object(self.imageOpencv)
+
+        # objects_to_detection = [self.objectTarget, self.secondaryTarget]
+        # for object in objects_to_detection:
+        #     self.imageOpencv = object.find_object(image)
 
     def click_and_crop(self,event, x, y, flags, param):
         # if the left mouse button was clicked, record the starting
@@ -214,15 +256,19 @@ class SeguirObjeto(QtGui.QMainWindow):
         if event == cv2.EVENT_LBUTTONDOWN:
             self.refPt = [(x, y)]
             self.cropping = True
+
+        elif event == cv2.EVENT_MOUSEMOVE and self.cropping:
+            self.refPt.append((x, y))
+
         # check to see if the left mouse button was released
         elif event == cv2.EVENT_LBUTTONUP:
             # record the ending (x, y) coordinates and indicate that
             # the cropping operation is finished
             self.refPt.append((x, y))
             self.cropping = False
-            # draw a rectangle around the region of interest
-            cv2.rectangle(self.imageOpencv, self.refPt[0], self.refPt[1], (0, 255, 0), 2)
-            cv2.imshow('Drone Vision', self.imageOpencv)
+            # # draw a rectangle around the region of interest
+            cv2.rectangle(self.imageOpencv, self.refPt[0], self.refPt[-1], (0, 255, 0), 2)
+            cv2.imshow('Drone Vision', self.imageOpencv) # show selection in WINDOW 'Drone Vision'
 
     # Function that is called when a new image arrives
     def receive_image(self, data):
@@ -244,14 +290,42 @@ class SeguirObjeto(QtGui.QMainWindow):
         #  through the port 5556
         self.communicationSinceTimer = True
 
+        msgTarget = self.MessageSituacion[self.objectTarget.estado]
+        # object status
+        self.statusMessage = str(msgTarget)
+
         # updates the status of the drone in the window
         msg = self.StatusMessages[
             navdata.state] if navdata.state in self.StatusMessages else self.UnknownMessage
-        msgTarget = self.MessageSituacion[self.objectTarget.estado]
+        # drone "status and battery"
+        self.statusConnect = str(msg)
+        self.statusBattery = int(navdata.batteryPercent)
 
-        # the object type and battery
-        self.statusMessage = '{} | Target: {} Status: {} |Target2:{} |(Battery: {}%)'.format(
-            msg, "FaceDetection",msgTarget,"nothign", int(navdata.batteryPercent))
+    def show_me_selection(self):
+        if isinstance(self.objectTarget, Ball):
+            # to cut image from point A to B
+            # A = x(i),y(i)
+            # B = x(i),y(i)
+
+            # where
+            # Point A
+            # x(1) = refPt[0][1]
+            # y(1) = refPt[1][1]
+            #
+            # Point B
+            # x(2) = refPt[0][0]
+            # y(2) = refPt[1][0]
+            self.roi = self.imageOpencv[self.refPt[0][1]:self.refPt[-1][1],
+                                      self.refPt[0][0]:self.refPt[-1][0]]
+            # detect color and set color
+            self.objectTarget.change_object_color(self.roi)
+            cv2.imshow("ROI", self.roi)  # show third WINDOW --> ROI
+
+    def detection_toggle(self):
+        if self.detectionObject:
+            self.detectionObject = False
+        else:
+            self.detectionObject = True
 
     def mover_drone(self):
         # verifies if the driver is ready to use drone
@@ -302,80 +376,42 @@ class SeguirObjeto(QtGui.QMainWindow):
                     # controller.set_command()
                     pass
     # keyboard, keys to move the drone
-    def keyPressEvent(self, event):
-
-        key = event.key()
-        if controller is not None and not event.isAutoRepeat():
-            if key == QtCore.Qt.Key.Key_Space:   # space for  takeoff or land
-                controller.takeoff_land_toggle()
-            elif key == QtCore.Qt.Key_W: # key "W" for forward
+    def something(self, key):
+        if key != -1:
+            if key == self.k_space:  # space for  takeoff or land
+                controller.takeoff_land_toggle()# necessary battery for takeoff is more 20%
+            elif key == self.k_w:  # key "W" for forward
                 controller.set_command(0, PORCENTAJE_VELOCIDAD, 0, 0)
-            elif key == QtCore.Qt.Key_S: # key "S" for backward
+            elif key == self.k_s:  # key "S" for backward
                 controller.set_command(0, -1 * PORCENTAJE_VELOCIDAD, 0, 0)
-            elif key == QtCore.Qt.Key_A: # key "A" for left
+            elif key == self.k_a:  # key "A" for left
                 controller.set_command(PORCENTAJE_VELOCIDAD, 0, 0, 0)
-            elif key == QtCore.Qt.Key_D: # key "D" for right
+            elif key == self.k_d:  # key "D" for right
                 controller.set_command(-1 * PORCENTAJE_VELOCIDAD, 0, 0, 0)
-            elif key == QtCore.Qt.Key_Right: # key "-->" for Right Vertex z
+            elif key == self.k_right:  # key "-->" for Right Vertex z
                 controller.set_command(0, 0, PORCENTAJE_VELOCIDAD, 0)
-            elif key == QtCore.Qt.Key_Left: # key "<--" for Left Vertex z
+            elif key == self.k_left:  # key "<--" for Left Vertex z
                 controller.set_command(0, 0, -1 * PORCENTAJE_VELOCIDAD, 0)
-            elif key == QtCore.Qt.Key_Up: # key "Up" for up Vertex z
+            elif key == self.k_up:  # key "Up" for up Vertex z
                 controller.set_command(0, 0, 0, PORCENTAJE_VELOCIDAD)
-            elif key == QtCore.Qt.Key_Down: # key "Down" for Down Vertex z
+            elif key == self.k_down:  # key "Down" for Down Vertex z
                 controller.set_command(0, 0, 0, -1 * PORCENTAJE_VELOCIDAD)
-            elif key == QtCore.Qt.Key_Q: # key "Q" for to stay
+            elif key == self.k_q:  # key "Q" for to stay
                 controller.set_command()
-            elif key == QtCore.Qt.Key_R: # key "R" change emergency mode
+            elif key == self.k_r:  # key "R" change emergency mode
                 controller.send_emergency()
-            elif key == QtCore.Qt.Key_P: # key "P" change camera
+            elif key == self.k_p:  # key "P" change camera
                 self.change_camera_flatTrim("/ardrone/togglecam", Empty)
-            elif key == QtCore.Qt.Key_B: # key "B" animation led
+            elif key == self.k_l:  # key "L" animation led
                 self.led_animation("/ardrone/setledanimation", LedAnim)
-            elif key == QtCore.Qt.Key_X: # key "X" FLIP animation
+            elif key == self.k_x:  # key "X" FLIP animation
                 self.flip_animation("/ardrone/setflightanimation", FlightAnim)
-            elif key == QtCore.Qt.Key_F: # key "F" flat trim
+            elif key == self.k_f:  # key "F" flat trim
                 self.change_camera_flatTrim("/ardrone/flattrim", Empty)
-            elif key == QtCore.Qt.Key_2:
-                if type(self.objectTarget) is type(Ball()):
-                    # if there are two reference points, then crop the region of interest
-                    # from teh image and display it
-                    if len(self.refPt) == 2:
-                        # crop image ROI
-                        cv2.namedWindow("ROI")
-                        clone = self.imageOpencv.copy()
-                        roi=  clone[self.refPt[0][1]:self.refPt[1][1],
-                                  self.refPt[0][0]:self.refPt[1][0]]
-                        mean,stds = cv2.meanStdDev(roi)
-                        cv2.imshow("ROI", roi)
-                        print(" START MEAN ")
-                        print(mean)
-                        print ("END MEAN")
-                        print("\n")
-                        print(" START STDS ")
-                        print(stds)
-                        print ("END STDS")
-
-                        bmin = mean[0] - stds[0]*3
-                        bmax = mean[0] + stds[0]*3
-                        gmin = mean[1] - stds[1]*3
-                        gmax = mean[1] + stds[1]*3
-                        rmin = mean[2] - stds[2]*3
-                        rmax = mean[2] + stds[2]*3
-                        lower = [bmin,gmin,rmin]
-                        upper = [bmax,gmax,rmax]
-                        # (MIN_H, MIN_S, MIN_V)
-                        print("==========")
-                        print(lower)
-                        print (upper)
-                        print("==========")
-                        self.objectTarget.set_color_hsv(lower,upper)
-
-            elif key == QtCore.Qt.Key_Z: # key "z" detection
-                if self.detectionObject:
-                    self.detectionObject= False
-                else:
-                    self.detectionObject = True
+            elif key == self.k_2:
+                self.show_me_selection()
+            elif key == self.k_z:  # key "z" detection
+                self.detection_toggle()
 
     # service change camera and flat trim receive same parameter
     def change_camera_flatTrim(self, serviceDrone, estructuraParam):

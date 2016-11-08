@@ -8,6 +8,13 @@ cascPath = os.path.dirname(os.path.realpath(__file__))+'/haarcascade_frontalface
 faceCascade = cv2.CascadeClassifier(cascPath)
 
 class Face(FigureStatus):
+    '''
+        this class detect Face --> method haarcascade
+        input --> image BGR
+        output --> image BGR + draw detection + position object
+                || only image in case no detection
+    '''
+
     def __init__(self):
         super(Face, self).__init__()
 
@@ -24,8 +31,8 @@ class Face(FigureStatus):
             (x, y, w, h) = faces[0]
             # for (x, y, w, h) in faces:
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            self.actualizar_situacion(x, y, w)
+            self.update_position_object(x, y, w)
             rospy.loginfo("x:{} y:{}".format(x,y))
         else:
-            self.actualizar_situacion(-1, -1, -1)
+            self.update_position_object(-1, -1, -1)
         return image

@@ -8,7 +8,13 @@ hog = cv2.HOGDescriptor()
 hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
 class Body(FigureStatus):
-    # detect people in the image
+    '''
+    this class detect Body --> method haarcascade + descriptor HOG
+    input --> image BGR
+    output --> image BGR + draw detection + position object
+            || only image in case no detection
+    '''
+
     def __init__(self):
         super(Body, self).__init__()
 
@@ -25,7 +31,7 @@ class Body(FigureStatus):
             x = ((xB - xA) /2.0) + xA
             y = ((yB - yA) / 2.0) + yA
             size = xB - xA
-            self.actualizar_situacion(x, y, size)
+            self.update_position_object(x, y, size)
         else:
-            self.actualizar_situacion(-1, -1, -1)
+            self.update_position_object(-1, -1, -1)
         return image

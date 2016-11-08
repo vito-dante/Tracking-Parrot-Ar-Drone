@@ -1,8 +1,9 @@
 
 
 class ObjectStatus(object):
-     """The situation of the object is described with the following
-            attributes"""
+     '''
+        all status of the drone is represent here
+     '''
      _instance = None
 
      def __new__(class_, *args, **kwargs):
@@ -12,7 +13,7 @@ class ObjectStatus(object):
 
      def __init__(self):
         self.__appeared = 0
-        self.__disapared = 1
+        self.__diapered = 1
         self.__movedLeft = 2
         self.__movedRight = 3
         self.__movedUp = 4
@@ -27,7 +28,7 @@ class ObjectStatus(object):
 
      @property
      def disapared(self):
-         return self.__disapared
+         return self.__diapered
 
      @property
      def moved_left(self):

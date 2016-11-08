@@ -11,26 +11,37 @@ MIN_S = 15
 MAX_S = 176
 MIN_V = 47
 MAX_V = 175
+lower = np.array((MIN_H, MIN_S, MIN_V))
+upper = np.array((MAX_H, MAX_S, MAX_V))
+
 # size draw = 64
 queque = 20
 pts = deque(maxlen=queque)
 
 class Ball(FigureStatus):
+    '''
+    this class detect object BALL
+    input --> image BGR
+    output --> image BGR + draw detection + + position object
+                || only image in case no detection
+    '''
+    lower_color = np.array(())
+    upper_color = np.array(())
+    increase = 2 # add more range to standard deviation
+    mask =None
+    frame = None
+    hsv = None
 
     def __init__(self):
         super(Ball, self).__init__()
-        #TODO pick up color from window
-        self.greenLower = (MIN_H, MIN_S, MIN_V)
-        self.greenUpper = (MAX_H, MAX_S, MAX_V)
-        self.mask = None
-        self.frame = None
+        self.set_color_hsv(lower,upper)
 
     def segmenta_objetos_color_roi(self):
         copy_image = self.frame.copy()
         cv2.GaussianBlur(copy_image, (11, 11), 0)
-        hsv = cv2.cvtColor(copy_image, cv2.COLOR_BGR2HSV)
+        self.hsv = cv2.cvtColor(copy_image, cv2.COLOR_BGR2HSV)
 
-        self.mask = cv2.inRange(hsv, self.greenLower, self.greenUpper)
+        self.mask = cv2.inRange(self.hsv, self.lower_color, self.upper_color)
         self.mask = cv2.erode(self.mask, None, iterations=2)
         self.mask = cv2.dilate(self.mask, None, iterations=2)
 
@@ -41,7 +52,7 @@ class Ball(FigureStatus):
                                 cv2.RETR_EXTERNAL,
                                 cv2.CHAIN_APPROX_SIMPLE)[-2]
         # only proceed if at least one contour was found
-        if len(cnts) > 0:
+        if (len(cnts) > 0):
             # find the largest contour in the mask, then use
             # it to compute the minimum enclosing circle and
             # centroid
@@ -53,11 +64,11 @@ class Ball(FigureStatus):
             x = int(M['m10'] / m00)
             y = int(M['m01'] / m00)
             # only proceed if the radius meets a minimum size
-            if radius > 10:
+            if (radius > 10):
                 # draw the circle and centroid on the frame,
                 # then update the list of tracked points
                 cv2.circle(self.frame, (int(x), int(y)), int(radius),
-                        (0, 255, 255), 2)
+                           (0, 255, 255), 2)
                 cv2.circle(self.frame, center, 5, (0, 255, 0), -1)
                 # update the points queue
                 pts.appendleft(center)
@@ -67,14 +78,26 @@ class Ball(FigureStatus):
                     # draw the connecting lines
                     thickness = int(np.sqrt(queque / float(i + 1)) * 2.5)
                     cv2.line(self.frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
-                    #TODO add size to actualizar_situacion
-                self.actualizar_situacion(x, y, 5)
+                    #TODO add size to update_position_object
+                self.update_position_object(x, y, 5)
         else:
-            self.actualizar_situacion(-1, -1, -1)
+            self.update_position_object(-1, -1, -1)
 
-    def set_color_hsv(self,min,max):
-        self.greenLower = min
-        self.greenUpper = max
+    def change_object_color(self,roi):
+
+        # Return mean and standard deviation
+        means, stds = cv2.meanStdDev(cv2.cvtColor(roi, cv2.COLOR_BGR2HSV))
+
+        stds = [std * self.increase for std in stds]
+        lower = np.subtract(means, stds)
+        upper = np.add(means, stds)
+
+        # set new color for Tracking
+        self.set_color_hsv(lower, upper)
+
+    def set_color_hsv(self,lower,upper):
+        self.lower_color = lower
+        self.upper_color = upper
 
     def find_object(self, image):
         self.frame = image

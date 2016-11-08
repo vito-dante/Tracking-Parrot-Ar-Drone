@@ -12,7 +12,12 @@ MARGEN_ARRIBA = MAX_Y * (1 - PORC_MARGEN)
 ObjectStatus = ObjectStatus()
 
 class FigureStatus(object):
-    """docstring for ClassName"""
+    '''
+    this class represent methods:
+     - find_object --> try detect object
+     - update_position_object --> set position object current
+
+    '''
     def __init__(self):
         super(FigureStatus, self).__init__()
         # size of the object in the previous frame
@@ -31,7 +36,7 @@ class FigureStatus(object):
     def find_object(self, image):
         pass
 
-    def actualizar_situacion(self, pxc, pyc, ptamano):
+    def update_position_object(self, pxc, pyc, ptamano):
 
         self.estado_antes = self.estado
 

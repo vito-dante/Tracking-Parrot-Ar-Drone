@@ -32,7 +32,7 @@ class qrCode(FigureStatus):
                 pointLocationY = ((d - e)/2.0) + e
                 #TODO SIZE relative change to size fixed
                 size = a - c
-                self.actualizar_situacion(pointLocationX, pointLocationY, size)
+                self.update_position_object(pointLocationX, pointLocationY, size)
                 return image
-        self.actualizar_situacion(-1, -1, -1)
+        self.update_position_object(-1, -1, -1)
         return image
