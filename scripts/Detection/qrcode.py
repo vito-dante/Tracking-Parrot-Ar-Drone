@@ -18,6 +18,7 @@ class qrCode(FigureStatus):
         pil = zbar.Image(width, height, 'Y800', raw)
         self.scanner.scan(pil)
         for symbol in pil:
+            # check if is my name is in the qrCode
             if symbol.data==self.myName:
                 points = symbol.location
                 #Draw square detection RED
@@ -33,6 +34,6 @@ class qrCode(FigureStatus):
                 #TODO SIZE relative change to size fixed
                 size = a - c
                 self.update_position_object(pointLocationX, pointLocationY, size)
-                return image
-        self.update_position_object(-1, -1, -1)
+            else:
+                self.update_position_object(-1, -1, -1)
         return image

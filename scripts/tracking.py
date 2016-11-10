@@ -25,7 +25,7 @@ from Detection.face import Face
 from Detection.qrcode import qrCode
 
 #controlls
-from controll import WindowControl
+from window_control import WindowControl
 
 # settings
 from settings import (CONNECTION_CHECK_PERIOD,
@@ -39,7 +39,7 @@ from sensor_msgs.msg import Image
 from std_srvs.srv import Empty
 
 # message ardrone_autonomy
-#To receive information on the status of the drone
+#For to receive information on the status of the drone
 from ardrone_autonomy.msg import Navdata
 #animation for the drone
 from ardrone_autonomy.srv import FlightAnim,LedAnim
@@ -48,6 +48,8 @@ from ardrone_autonomy.srv import FlightAnim,LedAnim
 from cv_bridge import CvBridge, CvBridgeError
 bridge = CvBridge()
 
+#keyboard keys
+from keyboard import Keyboard
 
 class SeguirObjeto(QtGui.QMainWindow):
 
@@ -59,52 +61,32 @@ class SeguirObjeto(QtGui.QMainWindow):
         DroneStatus.inited: 'Inciado',
         DroneStatus.landed: 'Aterrizado',
         DroneStatus.flying: 'Volando',
-        DroneStatus.hovering: 'Parado en el aire',
+        DroneStatus.hovering: 'Hover',
         DroneStatus.test: 'Es un Test ?',
         DroneStatus.taking_off: 'Despegando',
-        DroneStatus.go_to_hover: 'entrando en el modo parado en el aire ',
+        DroneStatus.go_to_hover: 'entrando en modo Hover',
         DroneStatus.landing: 'Aterrizando',
         DroneStatus.looping: 'Realizando un Loop ?'
     }
 
-    DisconnectedMessage = 'Desconectado'
+    DisconnectedMessage = 'Disconnect'
     UnknownMessage = 'Estado Desconocido'
 
     # status of the object for the window
     MessageSituacion = {
         ObjectStatus.appeared: 'Aparecio',
         ObjectStatus.disapared: 'Desaparecio',
-        ObjectStatus.moved_left: 'MovioParaIzquierda',
-        ObjectStatus.moved_right: 'MovioParaDerecha',
-        ObjectStatus.moved_up: 'MovioParaArriba',
-        ObjectStatus.moved_down: 'MovioParaAbajo',
-        ObjectStatus.moved_front: 'MovioParaFrente',
-        ObjectStatus.moved_back: 'MovioParaAtraz',
-        ObjectStatus.same_place: 'Parada'
+        ObjectStatus.moved_left: 'Izquierda',
+        ObjectStatus.moved_right: 'Derecha',
+        ObjectStatus.moved_up: 'Arriba',
+        ObjectStatus.moved_down: 'Abajo',
+        ObjectStatus.moved_front: 'Se movio hacia adelante',
+        ObjectStatus.moved_back: 'Se movio hacia atras',
+        ObjectStatus.same_place: 'Mismo lugar'
     }
+
     # object detection
     list_objects = [Ball, qrCode, Face, Body]
-
-    # key for opencv  another way convert to ASCII
-    # 1048695 &0xff(hexadecimal)
-    # from key to bytearray ASCII(ord) example ord('a') --> 119
-    k_w = 1048695
-    k_s = 1048691
-    k_a = 1048673
-    k_d = 1048676
-    k_space = 1048608
-    k_left = 1113937
-    k_right = 1113939
-    k_up = 1113938
-    k_down = 1113940
-    k_p = 1048688
-    k_l = 1048684
-    k_z = 1048698
-    k_x = 1048696
-    k_q = 1048689
-    k_2 = 1048626
-    k_r = 1048690
-    k_f = 1048678
 
     # self.image: save the images captured by the drone
     image = None
@@ -117,8 +99,8 @@ class SeguirObjeto(QtGui.QMainWindow):
 
     roi = None # for selection image
     # To cut image from vision drone
-    refPt = []
-    cropping = False
+    refPt = [] #Reference Points
+    cropping = False # Flag for to check if you are doing a cut
 
     # show message in window
     statusMessage = ''
@@ -136,16 +118,17 @@ class SeguirObjeto(QtGui.QMainWindow):
         xcenter,ycenter = self.center_on_screen()
         cv2.moveWindow('Drone Vision',xcenter,ycenter)
 
-        #WINDOW2 --> Vision del drone
-        self.setWindowTitle('Vision del drone')
+        #WINDOW2 --> Window controller
+        self.setWindowTitle('Control')
         self.controllers = WindowControl(self)
+        self.setStyleSheet("background-color:white;")
         self.controllers.object_detection_main.activated.connect(self.main_change_object)
         self.controllers.secondary_object_detection.activated.connect(self.secondary_change_object)
         self.setCentralWidget(self.controllers)
+        self.move(xcenter,ycenter)
 
         # WINDOW3 --> ROI
         cv2.namedWindow('ROI', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('ROI', 640, 360)
 
         #settings objects recognition
         self.settings_navigation()
@@ -200,11 +183,11 @@ class SeguirObjeto(QtGui.QMainWindow):
     def connection_callback(self):
         self.connected = self.communicationSinceTimer
         self.communicationSinceTimer = False
+        self.show_status_in_window()
 
         # ROS IMAGE converted to OpenCV
     def to_opencv(self, ros_image):
-        try:
-            # 'bgr8' | desired_encoding = "passthrough"
+        try:# 'bgr8' | desired_encoding = "passthrough"
             self.imageOpencv = bridge.imgmsg_to_cv2(ros_image, 'bgr8')
         except CvBridgeError as e:
             raise Exception("failure in conversion OpenCV image: {}".format(e))
@@ -218,8 +201,7 @@ class SeguirObjeto(QtGui.QMainWindow):
                 self.to_opencv(self.image) #Convert from ROS to OpenCV
 
                 if self.detectionObject: # detection object OFF or ON
-                    self.find_objects_all(self.imageOpencv)
-
+                    self.find_objects_all(self.imageOpencv,self.objects_selections())
                 # Draw rectangle until drop it mouse
                 if not self.cropping:
                     cv2.imshow('Drone Vision', self.imageOpencv)
@@ -230,24 +212,32 @@ class SeguirObjeto(QtGui.QMainWindow):
             finally:
                 self.imageLock.release()
 
-            self.something(cv2.waitKey(33))# Capture key from WINDOW --> Drone Vision
+            self.keyboard(cv2.waitKey(33))# Capture key from WINDOW --> Drone Vision
 
             self.mover_drone()
-        self.show_status_in_window()
+
+    def objects_selections(self):
+        if self.controllers.box_secondary_object.isChecked():
+            return [self.objectTarget,self.secondaryTarget]
+        else:
+            return [self.objectTarget]
 
     def show_status_in_window(self):
-        # updates a message with the current situation of the drone
-        self.controllers.status_drone.setText(self.statusConnect)
-        self.controllers.battery_status.setText(str(self.statusBattery))
-        self.controllers.status_objects_detection.setText(self.statusMessage)
+        # check according to CONNECTION_CHECK_PERIOD
+        if self.connected:
+            self.controllers.statusLayout.setHidden(False)
+            # updates a message with the current situation of the drone
+            self.controllers.status_drone.setText(self.statusConnect)
+            self.controllers.battery_status.setText(str(self.statusBattery))
+            self.controllers.status_objects_detection.setText(self.statusMessage)
+        else:
+            self.resize(180,40)
+            self.controllers.statusLayout.setHidden(True)
+            self.controllers.status_drone.setText(self.DisconnectedMessage)
 
-    def find_objects_all(self,image):
-        self.imageOpencv = self.objectTarget.find_object(image)
-        # self.imageOpencv = self.secondaryTarget.find_object(self.imageOpencv)
-
-        # objects_to_detection = [self.objectTarget, self.secondaryTarget]
-        # for object in objects_to_detection:
-        #     self.imageOpencv = object.find_object(image)
+    def find_objects_all(self,image, objectDetections):
+        for object in objectDetections:
+            image = object.find_object(image)
 
     def click_and_crop(self,event, x, y, flags, param):
         # if the left mouse button was clicked, record the starting
@@ -290,15 +280,14 @@ class SeguirObjeto(QtGui.QMainWindow):
         #  through the port 5556
         self.communicationSinceTimer = True
 
-        msgTarget = self.MessageSituacion[self.objectTarget.estado]
         # object status
-        self.statusMessage = str(msgTarget)
+        self.statusMessage = self.MessageSituacion[self.objectTarget.estado]
 
         # updates the status of the drone in the window
-        msg = self.StatusMessages[
+        self.statusConnect = self.StatusMessages[
             navdata.state] if navdata.state in self.StatusMessages else self.UnknownMessage
+
         # drone "status and battery"
-        self.statusConnect = str(msg)
         self.statusBattery = int(navdata.batteryPercent)
 
     def show_me_selection(self):
@@ -376,41 +365,41 @@ class SeguirObjeto(QtGui.QMainWindow):
                     # controller.set_command()
                     pass
     # keyboard, keys to move the drone
-    def something(self, key):
+    def keyboard(self, key):
         if key != -1:
-            if key == self.k_space:  # space for  takeoff or land
+            if key == Keyboard.k_space:  # space for  takeoff or land
                 controller.takeoff_land_toggle()# necessary battery for takeoff is more 20%
-            elif key == self.k_w:  # key "W" for forward
+            elif key == Keyboard.k_w:  # key "W" for forward
                 controller.set_command(0, PORCENTAJE_VELOCIDAD, 0, 0)
-            elif key == self.k_s:  # key "S" for backward
+            elif key == Keyboard.k_s:  # key "S" for backward
                 controller.set_command(0, -1 * PORCENTAJE_VELOCIDAD, 0, 0)
-            elif key == self.k_a:  # key "A" for left
+            elif key == Keyboard.k_a:  # key "A" for left
                 controller.set_command(PORCENTAJE_VELOCIDAD, 0, 0, 0)
-            elif key == self.k_d:  # key "D" for right
+            elif key == Keyboard.k_d:  # key "D" for right
                 controller.set_command(-1 * PORCENTAJE_VELOCIDAD, 0, 0, 0)
-            elif key == self.k_right:  # key "-->" for Right Vertex z
+            elif key == Keyboard.k_right:  # key "-->" for Right Vertex z
                 controller.set_command(0, 0, PORCENTAJE_VELOCIDAD, 0)
-            elif key == self.k_left:  # key "<--" for Left Vertex z
+            elif key == Keyboard.k_left:  # key "<--" for Left Vertex z
                 controller.set_command(0, 0, -1 * PORCENTAJE_VELOCIDAD, 0)
-            elif key == self.k_up:  # key "Up" for up Vertex z
+            elif key == Keyboard.k_up:  # key "Up" for up Vertex z
                 controller.set_command(0, 0, 0, PORCENTAJE_VELOCIDAD)
-            elif key == self.k_down:  # key "Down" for Down Vertex z
+            elif key == Keyboard.k_down:  # key "Down" for Down Vertex z
                 controller.set_command(0, 0, 0, -1 * PORCENTAJE_VELOCIDAD)
-            elif key == self.k_q:  # key "Q" for to stay
+            elif key == Keyboard.k_q:  # key "Q" for to stay
                 controller.set_command()
-            elif key == self.k_r:  # key "R" change emergency mode
+            elif key == Keyboard.k_r:  # key "R" change emergency mode
                 controller.send_emergency()
-            elif key == self.k_p:  # key "P" change camera
+            elif key == Keyboard.k_p:  # key "P" change camera
                 self.change_camera_flatTrim("/ardrone/togglecam", Empty)
-            elif key == self.k_l:  # key "L" animation led
+            elif key == Keyboard.k_l:  # key "L" animation led
                 self.led_animation("/ardrone/setledanimation", LedAnim)
-            elif key == self.k_x:  # key "X" FLIP animation
+            elif key == Keyboard.k_x:  # key "X" FLIP animation
                 self.flip_animation("/ardrone/setflightanimation", FlightAnim)
-            elif key == self.k_f:  # key "F" flat trim
+            elif key == Keyboard.k_f:  # key "F" flat trim
                 self.change_camera_flatTrim("/ardrone/flattrim", Empty)
-            elif key == self.k_2:
+            elif key == Keyboard.k_2:
                 self.show_me_selection()
-            elif key == self.k_z:  # key "z" detection
+            elif key == Keyboard.k_z:  # key "z" detection
                 self.detection_toggle()
 
     # service change camera and flat trim receive same parameter

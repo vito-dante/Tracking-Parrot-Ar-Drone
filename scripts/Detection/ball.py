@@ -51,6 +51,7 @@ class Ball(FigureStatus):
         cnts = cv2.findContours(self.mask,
                                 cv2.RETR_EXTERNAL,
                                 cv2.CHAIN_APPROX_SIMPLE)[-2]
+
         # only proceed if at least one contour was found
         if (len(cnts) > 0):
             # find the largest contour in the mask, then use
