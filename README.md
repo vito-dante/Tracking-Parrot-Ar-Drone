@@ -40,7 +40,7 @@ apt-get install libffi-dev libssl-dev
 
 # To intall and run   
 
-- `~/catkin_ws/src`
+- `cd ~/catkin_ws/src`
 - `git clone git@github.com:vito-dante/Tracking_Parrot_Ar_Drone.git`   
 - `cd ~/catkin_ws/`
 - `catkin_make`
@@ -50,7 +50,7 @@ apt-get install libffi-dev libssl-dev
 
 ## Permission error
 
-- `chmod +x track.py` --> directory root
+- `chmod +x track.py` --> directory scripts
 - `chmod +x bot.py` --> directory facebookMessenger
 
 
