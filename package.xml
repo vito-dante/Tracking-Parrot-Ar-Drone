@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package>
-  <name>seguir_objeto</name>
+  <name>Tracking_Parrot_Ar_Drone</name>
   <version>1.0.0</version>
   <description>Realiza tracking de un objeto</description>
 
-  <maintainer email="vitoallstarz@gmail.com">Vito Marcilio Marca Vilte</maintainer>
+  <maintainer email="vitomarcavilte@gmail.com">Vito Marca </maintainer>
 
   <license>BSD</license>
 

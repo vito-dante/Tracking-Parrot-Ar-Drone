@@ -10,5 +10,5 @@
 	    <param name="control_yaw" value="2.1" /> <!-- maximum rotation rate in radians / sec = 120 degrees per second (1/3 rev / sec) -->
 	</node>
 	<!-- Launches the keyboard controller -->
-	<node name="tracking" pkg="seguir_objeto" type="tracking.py" required="true"/>
+	<node name="track" pkg="Tracking_Parrot_Ar_Drone" type="track.py" required="true"/>
 </launch>

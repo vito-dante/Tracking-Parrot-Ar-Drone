@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(seguir_objeto)
+project(Tracking_Parrot_Ar_Drone)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
