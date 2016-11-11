@@ -11,7 +11,7 @@ tracking with parrot ar drone 2.0
 - PIL
 - numpy
 
-# install depencies 
+# Install depencies 
 ##Docker and ROS indigo 
 `docker run -it \
     --env="DISPLAY" \
@@ -30,27 +30,25 @@ run script `chmod +x opencv_install.sh && ./opencv_install.sh`
 ##imutils, zbar, pillow, flask, pymessenger, requests[security] 
 `pip install -r requirements.txt`
 
-#SSL lib for request from facebook
-apt-get install libffi-dev libssl-dev
-
 ## ignore libdc1394 
 `sudo ln /dev/null /dev/raw1394`
 
+##SSL lib for request from facebook
+apt-get install libffi-dev libssl-dev
 
-# Intall 
+
+
+# To intall and run   
 
 - `~/catkin_ws/src`
 - `git clone git@github.com:vito-dante/Tracking_Parrot_Ar_Drone.git`   
 - `cd ~/catkin_ws/`
 - `catkin_make`
-
-# Run app
-
 - `roslaunch Tracking_Parrot_Ar_Drone tracking.launch`
 - `./ngrok http 5000` -->  directory facebookMessenger 
 - `./bot.py` 
 
-# Permission error
+## Permission error
 
 - `chmod +x track.py` --> directory root
 - `chmod +x bot.py` --> directory facebookMessenger
