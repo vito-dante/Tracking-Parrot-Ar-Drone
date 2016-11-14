@@ -18,20 +18,33 @@ class FigureStatus(object):
      - update_position_object --> set position object current
 
     '''
-    def __init__(self):
+    # status of the object for the window
+    MessageSituacion = {
+        ObjectStatus.appeared: 'Aparecio',
+        ObjectStatus.disapared: 'Desaparecio',
+        ObjectStatus.moved_left: 'Izquierda',
+        ObjectStatus.moved_right: 'Derecha',
+        ObjectStatus.moved_up: 'Arriba',
+        ObjectStatus.moved_down: 'Abajo',
+        ObjectStatus.moved_front: 'Se movio hacia adelante',
+        ObjectStatus.moved_back: 'Se movio hacia atras',
+        ObjectStatus.same_place: 'Mismo lugar'
+    }
+
+    def __init__(self,sizeA,sizeB):
         super(FigureStatus, self).__init__()
         # size of the object in the previous frame
         self.tamano_antes = -1
         # Saves the previous state
         self.estado_antes = -1
-        #the center of the object at the location x
-        self.xc = -1
-        # the center of the object at the location x
-        self.yc = -1
         #current size of the object
         self.tamano = -1
         #initial state of the object
         self.estado = ObjectStatus.disapared
+        # size for each figure
+        self.size_wished_inf = sizeA
+        self.size_wished_sup = sizeB
+
 
     def find_object(self, image):
         pass
@@ -53,45 +66,29 @@ class FigureStatus(object):
 
             else:
                 # like "Object Status.same_place" 10 percent is used
-                # to see if the object became larger or perqueno
-                front = self.tamano_antes + (self.tamano_antes*0.1)
-                behind = self.tamano_antes - (self.tamano_antes*0.1)
+                # to see if the object became larger or small
 
-
-                # image is inverted
-                if ptamano > front:
-                    self.estado =  ObjectStatus.moved_back
-                    pass
-                elif ptamano < behind:
-                    self.estado =  ObjectStatus.moved_front
-                    pass
-                elif pxc > MARGEN_DER:
-                    self.estado = ObjectStatus.moved_left
-                elif pxc < MARGEN_IZQ:
+                if pxc > MARGEN_DER:
                     self.estado = ObjectStatus.moved_right
+                elif pxc < MARGEN_IZQ:
+                    self.estado = ObjectStatus.moved_left
                 elif pyc > MARGEN_ARRIBA:
                     self.estado = ObjectStatus.moved_down
-                    pass
                 elif pyc < MARGEN_ABAJO:
                     self.estado = ObjectStatus.moved_up
+                elif self.estado_antes == self.estado and \
+                                ptamano > self.size_wished_inf and \
+                                ptamano < self.size_wished_sup:
+                    self.estado = ObjectStatus.same_place
+                elif ptamano > self.size_wished_sup:
+                    self.estado =  ObjectStatus.moved_front
                     pass
-                else:
-                    # it takes 5 percentage the size to see if the continuous drone
-                    # in the same place.
-                    # if the size of the object to be located
-                    # passes or is less than 5 percent in the next state figure
-                    # or object it has moved
-
-                    porc = self.tamano_antes * 0.05
-                    ptamano_inf = self.tamano_antes - porc
-                    ptamano_sup = self.tamano_antes + porc
-                    if self.estado_antes == self.estado and \
-                                ptamano > ptamano_inf and \
-                                ptamano < ptamano_sup:
-                        self.estado = ObjectStatus.same_place
+                elif ptamano < self.size_wished_inf:
+                    self.estado =  ObjectStatus.moved_back
 
         # updated object variables
         self.tamano_antes = self.tamano
-        self.xc = pxc
-        self.yc = pyc
         self.tamano = ptamano
+
+    def status_msg(self):
+        return self.MessageSituacion[self.estado]

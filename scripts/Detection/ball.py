@@ -22,7 +22,7 @@ class Ball(FigureStatus):
     '''
     this class detect object BALL
     input --> image BGR
-    output --> image BGR + draw detection + + position object
+    output --> image BGR + draw detection + position object
                 || only image in case no detection
     '''
     lower_color = np.array(())
@@ -31,9 +31,9 @@ class Ball(FigureStatus):
     mask =None
     frame = None
     hsv = None
-
-    def __init__(self):
-        super(Ball, self).__init__()
+    # sizeA and sizeB is the size of area for detection
+    def __init__(self, sizeA=23, sizeB=33):
+        super(Ball, self).__init__(sizeA, sizeB)
         self.set_color_hsv(lower,upper)
 
     def segmenta_objetos_color_roi(self):
@@ -65,7 +65,7 @@ class Ball(FigureStatus):
             x = int(M['m10'] / m00)
             y = int(M['m01'] / m00)
             # only proceed if the radius meets a minimum size
-            if (radius > 10):
+            if (radius > 15 and radius<40):
                 # draw the circle and centroid on the frame,
                 # then update the list of tracked points
                 cv2.circle(self.frame, (int(x), int(y)), int(radius),
@@ -79,8 +79,7 @@ class Ball(FigureStatus):
                     # draw the connecting lines
                     thickness = int(np.sqrt(queque / float(i + 1)) * 2.5)
                     cv2.line(self.frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
-                    #TODO add size to update_position_object
-                self.update_position_object(x, y, 5)
+                self.update_position_object(x, y, radius)
         else:
             self.update_position_object(-1, -1, -1)
 

@@ -2,10 +2,11 @@ import cv2
 import zbar
 from PIL import Image
 from .figure import FigureStatus
+import rospy
 
 class qrCode(FigureStatus):
-    def __init__(self):
-        super(qrCode, self).__init__()
+    def __init__(self, sizeA=70, sizeB=85):
+        super(qrCode, self).__init__(sizeA, sizeB)
         self.scanner = zbar.ImageScanner()
         self.scanner.parse_config('enable')
         self.myName = "Vito Marca Vilte"
@@ -29,11 +30,11 @@ class qrCode(FigureStatus):
                 c = points[0][0]
                 d = points[2][1]
                 e = points[0][1]
-                pointLocationX = ((a - c )/2.0) + c
-                pointLocationY = ((d - e)/2.0) + e
-                #TODO SIZE relative change to size fixed
+                x = ((a - c )/2.0) + c
+                y = ((d - e)/2.0) + e
                 size = a - c
-                self.update_position_object(pointLocationX, pointLocationY, size)
+                rospy.loginfo("x:{} y:{} ball w: {} ".format(x, y, size))
+                self.update_position_object(x, y, size)
             else:
                 self.update_position_object(-1, -1, -1)
         return image

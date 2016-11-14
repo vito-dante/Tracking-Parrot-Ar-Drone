@@ -15,8 +15,8 @@ class Body(FigureStatus):
             || only image in case no detection
     '''
 
-    def __init__(self):
-        super(Body, self).__init__()
+    def __init__(self, sizeA=30,sizeB=40):
+        super(Body, self).__init__(sizeA, sizeB)
 
     def find_object(self, image):
         (rects, weights) = hog.detectMultiScale(image.copy(), winStride=(4, 4),

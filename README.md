@@ -1,15 +1,11 @@
-# Tracking-Parrot-Ar-Drone
+# Tracking Parrot Ar Drone
 tracking with parrot ar drone 2.0
 
 #Dependencies
 - ROS(indigo)
-- ardroneAutono
-- opencv(2.4)
-- python(2.7)
-- imutils
-- zbar 
-- PIL
-- numpy
+- ardroneAutonomy
+- opencv(2.4.x)
+- python(2.7.x)
 
 # Install depencies 
 ##Docker and ROS indigo 
@@ -42,6 +38,7 @@ apt-get install libffi-dev libssl-dev
 
 - `cd ~/catkin_ws/src`
 - `git clone git@github.com:vito-dante/Tracking_Parrot_Ar_Drone.git`   
+- `git clone https://github.com/AutonomyLab/ardrone_autonomy.git`
 - `cd ~/catkin_ws/`
 - `catkin_make`
 - `roslaunch Tracking_Parrot_Ar_Drone tracking.launch`

@@ -68,4 +68,3 @@ class WindowControl(QtGui.QWidget):
         layout_window_container.addWidget(box_drone, 1, 0)
 
         self.setLayout(layout_window_container)
-
