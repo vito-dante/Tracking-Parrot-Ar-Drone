@@ -1,14 +1,14 @@
 # Tracking Parrot Ar Drone
 tracking with parrot ar drone 2.0
 
-#Dependencies
+## Dependencies
 - ROS(indigo)
 - ardroneAutonomy
 - opencv(2.4.x)
 - python(2.7.x)
 
 # Install depencies 
-##Docker and ROS indigo 
+## Docker and ROS indigo 
 `docker run -it \
     --env="DISPLAY" \
     --env="QT_X11_NO_MITSHM=1" \
@@ -17,19 +17,19 @@ tracking with parrot ar drone 2.0
 export containerId=$(docker ps -l -q)`
 [More info](http://wiki.ros.org/docker/Tutorials/GUI#The_simple_way)
 
-##unzip 
+## unzip 
 `sudo apt-get install unzip`
 
-##OpenCV 
+## OpenCV 
 run script `chmod +x opencv_install.sh && ./opencv_install.sh`
 
-##imutils, zbar, pillow, flask, pymessenger, requests[security] 
+## imutils, zbar, pillow, flask, pymessenger, requests[security] 
 `pip install -r requirements.txt`
 
 ## ignore libdc1394 
 `sudo ln /dev/null /dev/raw1394`
 
-##SSL lib for request from facebook
+## SSL lib for request from facebook
 apt-get install libffi-dev libssl-dev
 
 
